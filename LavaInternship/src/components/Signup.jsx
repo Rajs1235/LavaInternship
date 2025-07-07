@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
+import Login from './Login';
 
 function Signup() {
    const [fullName, setfullName] = useState('');
@@ -9,6 +9,8 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+const [role, setRole] = useState('');
+
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ function Signup() {
       });
 
       console.log('Signup successful:', res.data);
-      navigate('/Login');
+      navigate('/');
     } catch (err) {
       console.error('Signup error:', err);
       setError(err.response?.data?.message || 'Signup failed. Try again.');
@@ -36,18 +38,7 @@ function Signup() {
           <p className="title">SIGN UP</p>
 
           <form onSubmit={handleSignup}>
-            <div className="form_group">
-              <label className="sub_title" htmlFor="name">FullName</label>
-              <input
-                placeholder="Enter your full name"
-                id="name"
-                className="form_style"
-                type="text"
-                value={fullName}
-                onChange={(e) => setfullName(e.target.value)}
-                required
-              />
-            </div>
+          
       <div className="form_group">
               <label className="sub_title" htmlFor="name">UserName</label>
               <input
@@ -85,7 +76,19 @@ function Signup() {
                 required
               />
             </div>
-
+          <div className="form_group">
+             <label className="sub_title" htmlFor="role">Role</label>
+<select
+  value={role}
+  onChange={(e) => setRole(e.target.value)}
+  className="form_style"
+  required
+>
+  <option value="">Select Role</option>
+  <option value="student">Student</option>
+  <option value="hr">HR</option>
+</select>
+</div>  
             {error && (
               <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
             )}
@@ -94,7 +97,7 @@ function Signup() {
               <button type="submit" className="btn">SIGN UP</button>
               <p>
                 Have an Account?{' '}
-                <Link className="link" to="/login">Login Here!</Link>
+                <Link className="link" to="/">Login Here!</Link>
               </p>
             </div>
           </form>

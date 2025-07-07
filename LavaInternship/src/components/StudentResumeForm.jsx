@@ -28,9 +28,9 @@ const StudentResumeForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-teal-200 to-blue-200 flex items-center justify-center p-6">
+    <div className="min-h-screen  flex items-center justify-center p-6">
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-3xl">
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">🎓 Student Resume Form</h2>
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">🎓 Employee Resume Form</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -61,6 +61,15 @@ const StudentResumeForm = () => {
               <label className="block font-medium mb-1">Graduation Marks (%)</label>
               <input type="text" name="gradMarks" className="w-full border rounded-md px-3 py-2" required />
             </div>
+                  <div>
+              <label className="block font-medium mb-1">Gender</label>
+              <select name="Gender" className="w-full border rounded-md px-3 py-2" required>
+<option value="M">Male</option>
+<option value="F">Female</option>
+
+              </select>
+
+            </div>
             <div>
               <label className="block font-medium mb-1">Work Preference</label>
               <select name="workPref" className="w-full border rounded-md px-3 py-2" required>
@@ -69,11 +78,12 @@ const StudentResumeForm = () => {
                 <option value="Office">Office</option>
               </select>
             </div>
+            <div>
+              <label className="block font-medium mb-1">Linked-In</label>
+              <input type="text" name="name" className="w-full border rounded-md px-3 py-2" placeholder='Enter Linkedin URL'required />
+            </div>
           </div>
-          <div>
-            <label className="block font-medium mb-1">Work Experience</label>
-            <textarea name="experience" className="w-full border rounded-md px-3 py-2" rows="3" placeholder="Write your experience (if any)..." />
-          </div>
+
           <div>
             <label className="block font-medium mb-1">Upload Resume (PDF)</label>
             <input type="file" name="resume" accept=".pdf" className="w-full border rounded-md px-3 py-2" required />
