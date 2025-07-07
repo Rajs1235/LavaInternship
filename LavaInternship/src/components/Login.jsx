@@ -1,94 +1,80 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Link,NavLink } from 'react-router-dom';
+// import api from '../api'; // Uncomment and adjust as needed
+import Signup from './Signup';
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If you want to prefill role from signup, you can use location.state?.role
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-
     try {
-      const response = await api.post("/users/login", { username, password });
-
-      const { user, accesstoken, refreshtoken } = response.data.data;
-      console.log("Login successful. Access token:", accesstoken);
-
-      if (!accesstoken) {
-        throw new Error("Access token missing in response.");
-      }
-
-      // ✅ Store tokens and user data
-      localStorage.setItem("token", accesstoken);
-      localStorage.setItem("refreshToken", refreshtoken); // optional
-      localStorage.setItem("userProfile", JSON.stringify(user));
-      localStorage.setItem("userId", user._id);
-
-      // ✅ Redirect based on onboarding status
-      if (user.onboardingComplete) {
-        navigate("/dashboard");
+      // Uncomment and adjust for your backend
+      // const res = await api.post('/users/login', { username, password });
+      // const { role } = res.data.user;
+      let role = 'student'; // mock for demo, replace with real role from response
+      if (username === 'hr') role = 'hr';
+      if (role === 'student') {
+        navigate('/studentform');
+      } else if (role === 'hr') {
+        navigate('/dashboard');
       } else {
-        navigate("/onboarding");
+        setError('Unknown role');
       }
     } catch (err) {
-      console.error("Login failed:", err);
-      setError(err.response?.data?.message || "Login failed. Please try again.");
+      setError('Login failed. Try again.');
     }
   };
 
   return (
-    <div className="space-y-8 min-h-[400px] flex flex-col justify-between">
-      <div className="container">
-        <div className="form_area">
-          <p className="title">LOGIN</p>
-
-          <form onSubmit={handleLogin}>
-            <div className="form_group">
-              <label className="sub_title" htmlFor="username">Username</label>
-              <input
-                id="username"
-                className="form_style"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form_group">
-              <label className="sub_title" htmlFor="password">Password</label>
-              <input
-                id="password"
-                className="form_style"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            {error && (
-              <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
-            )}
-
-            <div>
-              <button type="submit" className="btn">LOGIN</button>
-              <p>
-                Don’t have an account?{' '}
-                <Link className="link" to="/signup">Sign Up Here!</Link>
-              </p>
-            </div>
-          </form>
-        </div>
+    <div className="container">
+      <div className="form_area">
+        <p className="title">LOGIN</p>
+        <form onSubmit={handleLogin}>
+          <div className="form_group">
+            <label className="sub_title" htmlFor="username">UserName</label>
+            <input
+              placeholder="Enter your Username"
+              id="username"
+              className="form_style"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form_group">
+            <label className="sub_title" htmlFor="password">Password</label>
+            <input
+              placeholder="Enter your password"
+              id="password"
+              className="form_style"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && (
+            <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
+          )}
+          <div>
+            <button type="submit" className="btn">LOGIN</button>
+            <p>
+              Don't have an account?{' '}
+              <Link className="link" to="/Signup">Sign Up Here!</Link>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   );
-
 }
 
 export default Login;

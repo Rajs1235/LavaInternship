@@ -1,33 +1,24 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+// import api from '../api'; // Uncomment and adjust as needed
 import Login from './Login';
-
 function Signup() {
-   const [fullName, setfullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-const [role, setRole] = useState('');
-
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    
     try {
-      const res = await api.post('/users/register', {
-        fullName,
-        username,
-        email,
-        password,
-      });
-
-      console.log('Signup successful:', res.data);
-      navigate('/');
+      // Uncomment and adjust for your backend
+      // const res = await api.post('/users/register', { username, email, password, role });
+      // console.log('Signup successful:', res.data);
+      navigate('/login', { state: { role } });
     } catch (err) {
-      console.error('Signup error:', err);
-      setError(err.response?.data?.message || 'Signup failed. Try again.');
+      setError('Signup failed. Try again.');
     }
   };
 
@@ -36,11 +27,9 @@ const [role, setRole] = useState('');
       <div className="container">
         <div className="form_area">
           <p className="title">SIGN UP</p>
-
           <form onSubmit={handleSignup}>
-          
-      <div className="form_group">
-              <label className="sub_title" htmlFor="name">UserName</label>
+            <div className="form_group">
+              <label className="sub_title" htmlFor="username">UserName</label>
               <input
                 placeholder="Enter your Username"
                 id="username"
@@ -63,7 +52,6 @@ const [role, setRole] = useState('');
                 required
               />
             </div>
-
             <div className="form_group">
               <label className="sub_title" htmlFor="password">Password</label>
               <input
@@ -76,28 +64,27 @@ const [role, setRole] = useState('');
                 required
               />
             </div>
-          <div className="form_group">
-             <label className="sub_title" htmlFor="role">Role</label>
-<select
-  value={role}
-  onChange={(e) => setRole(e.target.value)}
-  className="form_style"
-  required
->
-  <option value="">Select Role</option>
-  <option value="student">Student</option>
-  <option value="hr">HR</option>
-</select>
-</div>  
+            <div className="form_group">
+              <label className="sub_title" htmlFor="role">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="form_style"
+                required
+              >
+                <option value="">Select Role</option>
+                <option value="student">Student</option>
+                <option value="hr">HR</option>
+              </select>
+            </div>
             {error && (
               <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
             )}
-
             <div>
               <button type="submit" className="btn">SIGN UP</button>
               <p>
                 Have an Account?{' '}
-                <Link className="link" to="/">Login Here!</Link>
+                <Link className="link" to="/Login">Login Here!</Link>
               </p>
             </div>
           </form>
