@@ -5,7 +5,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#dda5a5] font-['Segoe_UI']">
+    <div className="min-h-screen flex flex-col items-center justify-center ">
       <div className="bg-white border-2 border-[#264143] rounded-2xl shadow-[3px_4px_0px_1px_#E99F4C] p-10 max-w-xl w-full text-center">
         <h1 className="text-3xl font-extrabold text-[#264143] mb-2">Welcome to Resume Portal</h1>
         <p className="text-lg text-[#DE5499] mb-6 font-semibold">
