@@ -64,19 +64,7 @@ function Signup() {
                 required
               />
             </div>
-            <div className="form_group">
-              <label className="sub_title" htmlFor="role">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="form_style"
-                required
-              >
-                <option value="">Select Role</option>
-                <option value="student">Student</option>
-                <option value="hr">HR</option>
-              </select>
-            </div>
+           
             {error && (
               <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
             )}

@@ -14,8 +14,9 @@ const StudentResumeForm = () => {
       gradYear: e.target.gradYear.value,
       marks12: e.target.marks12.value,
       gradMarks: e.target.gradMarks.value,
+      gender: e.target.Gender.value,
       workPref: e.target.workPref.value,
-      experience: e.target.experience.value,
+      linkedIn: e.target.linkedIn.value,
       resume: e.target.resume.files[0]?.name || ''
     };
 
@@ -28,7 +29,7 @@ const StudentResumeForm = () => {
   };
 
   return (
-    <div className="min-h-screen  flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6">
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-3xl">
         <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">🎓 Employee Resume Form</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,14 +62,12 @@ const StudentResumeForm = () => {
               <label className="block font-medium mb-1">Graduation Marks (%)</label>
               <input type="text" name="gradMarks" className="w-full border rounded-md px-3 py-2" required />
             </div>
-                  <div>
+            <div>
               <label className="block font-medium mb-1">Gender</label>
               <select name="Gender" className="w-full border rounded-md px-3 py-2" required>
-<option value="M">Male</option>
-<option value="F">Female</option>
-
+                <option value="M">Male</option>
+                <option value="F">Female</option>
               </select>
-
             </div>
             <div>
               <label className="block font-medium mb-1">Work Preference</label>
@@ -79,8 +78,8 @@ const StudentResumeForm = () => {
               </select>
             </div>
             <div>
-              <label className="block font-medium mb-1">Linked-In</label>
-              <input type="text" name="name" className="w-full border rounded-md px-3 py-2" placeholder='Enter Linkedin URL'required />
+              <label className="block font-medium mb-1">LinkedIn</label>
+              <input type="text" name="linkedIn" className="w-full border rounded-md px-3 py-2" placeholder="Enter LinkedIn URL" required />
             </div>
           </div>
 
@@ -88,18 +87,32 @@ const StudentResumeForm = () => {
             <label className="block font-medium mb-1">Upload Resume (PDF)</label>
             <input type="file" name="resume" accept=".pdf" className="w-full border rounded-md px-3 py-2" required />
           </div>
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium mt-2">
+          <button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium mt-2"
+          >
             📤 Submit Resume
           </button>
         </form>
 
-        {/* Toast Notification */}
+        {/* Animated Toast */}
         {toastVisible && (
-          <div className="fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-300">
+          <div className="fixed bottom-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in">
             ✅ Form submitted successfully!
           </div>
         )}
       </div>
+
+      {/* Toast Slide Animation */}
+      <style>{`
+        @keyframes slideIn {
+          0% { transform: translateX(150%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.5s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
