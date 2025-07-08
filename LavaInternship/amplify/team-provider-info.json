@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-lavainternship-dev-0afa6-authRole",
+      "UnauthRoleArn": "arn:aws:iam::973442309075:role/amplify-lavainternship-dev-0afa6-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::973442309075:role/amplify-lavainternship-dev-0afa6-authRole",
+      "Region": "ap-south-1",
+      "DeploymentBucketName": "amplify-lavainternship-dev-0afa6-deployment",
+      "UnauthRoleName": "amplify-lavainternship-dev-0afa6-unauthRole",
+      "StackName": "amplify-lavainternship-dev-0afa6",
+      "StackId": "arn:aws:cloudformation:ap-south-1:973442309075:stack/amplify-lavainternship-dev-0afa6/313d6240-5bb5-11f0-afd1-0214f95a464f",
+      "AmplifyAppId": "d2q5q5emrb0p3v"
+    },
+    "categories": {
+      "auth": {
+        "lavainternship4fed1fad": {}
+      }
+    }
+  }
+}
