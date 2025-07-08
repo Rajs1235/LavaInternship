@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from 'aws-amplify/auth';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 const genderData = [
@@ -46,12 +48,32 @@ const candidates = [
 
 const HRDashboard = () => {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#dda5a5] flex font-['Segoe_UI']">
       {/* Sidebar */}
       <div className="w-1/4 min-h-screen bg-white border-r border-[#264143] p-4">
-        <h2 className="text-xl font-bold text-[#264143] mb-4">Candidates</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-[#264143]">HR Dashboard</h2>
+          <button
+            onClick={handleLogout}
+            className="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+          >
+            Logout
+          </button>
+        </div>
+        
+        <h3 className="text-lg font-semibold text-[#264143] mb-4">Candidates</h3>
         <ul className="space-y-2">
           {candidates.map((candidate, i) => (
             <li
@@ -125,34 +147,33 @@ const HRDashboard = () => {
         ) : (
           <>
             {/* Candidate Details */}
-          <div className="bg-[#EDDCD9] border-2 border-[#264143] rounded-xl shadow-[3px_4px_0px_1px_#E99F4C] p-4">
-  <h1 className="text-2xl font-extrabold text-[#264143]">{selectedCandidate.name}</h1>
-  <p className="text-sm text-[#264143]">
-    Applied for: <span className="font-semibold">{selectedCandidate.job}</span>
-  </p>
-  <div className="mt-2 flex gap-4 text-sm text-gray-600">
-    <span>📍 {selectedCandidate.location}</span>
-    <span>📞 {selectedCandidate.phone}</span>
-    <span>✉️ {selectedCandidate.email}</span>
-  </div>
+            <div className="bg-[#EDDCD9] border-2 border-[#264143] rounded-xl shadow-[3px_4px_0px_1px_#E99F4C] p-4">
+              <h1 className="text-2xl font-extrabold text-[#264143]">{selectedCandidate.name}</h1>
+              <p className="text-sm text-[#264143]">
+                Applied for: <span className="font-semibold">{selectedCandidate.job}</span>
+              </p>
+              <div className="mt-2 flex gap-4 text-sm text-gray-600">
+                <span>📍 {selectedCandidate.location}</span>
+                <span>📞 {selectedCandidate.phone}</span>
+                <span>✉️ {selectedCandidate.email}</span>
+              </div>
 
-  {/* Buttons */}
-  <div className="mt-4 flex gap-4">
-    <button
-      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md"
-      onClick={() => alert(`${selectedCandidate.name} advanced!`)}
-    >
-      ✅ Advance
-    </button>
-    <button
-      className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-md"
-      onClick={() => alert(`${selectedCandidate.name} rejected.`)}
-    >
-      ❌ Reject
-    </button>
-  </div>
-</div>
-
+              {/* Buttons */}
+              <div className="mt-4 flex gap-4">
+                <button
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md"
+                  onClick={() => alert(`${selectedCandidate.name} advanced!`)}
+                >
+                  ✅ Advance
+                </button>
+                <button
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-md"
+                  onClick={() => alert(`${selectedCandidate.name} rejected.`)}
+                >
+                  ❌ Reject
+                </button>
+              </div>
+            </div>
 
             <div className="flex gap-6 mt-4">
               {/* Resume Viewer */}

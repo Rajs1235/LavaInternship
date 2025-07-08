@@ -6,8 +6,18 @@ const Home = () => {
   const navigate = useNavigate();
   const [isStudent, setIsStudent] = useState(false);
 
+  const handleGetStarted = () => {
+    if (isStudent) {
+      // Students go directly to resume form without authentication
+      navigate('/studentform');
+    } else {
+      // HR users go to Cognito login
+      navigate('/hr-login');
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center] relative">
+    <div className="min-h-screen flex flex-col items-center justify-center relative">
       {/* Toggle Switch */}
       <div className="absolute top-10">
         <div className="toggleWrapper">
@@ -32,11 +42,10 @@ const Home = () => {
             <span className="star star--6"></span>
           </label>
         </div>
-     <div className="flex justify-between mt-20 w-full px-12 text-4xl text-[#264143]">
-  <FaLaptopCode className={!isStudent ? '' : 'opacity-30'} />
-  <FaUserGraduate className={isStudent ? '' : 'opacity-30'} />
-</div>
-
+        <div className="flex justify-between mt-20 w-full px-12 text-4xl text-[#264143]">
+          <FaLaptopCode className={!isStudent ? '' : 'opacity-30'} />
+          <FaUserGraduate className={isStudent ? '' : 'opacity-30'} />
+        </div>
       </div>
 
       {/* Card */}
@@ -51,27 +60,22 @@ const Home = () => {
             : "HRs can manage, review, and process applications efficiently."}
         </p>
 
-        {isStudent ? (
-          <button
-            onClick={() => navigate('/studentform')}
-            className="btn bg-[#264143] text-white font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition"
-          >
-            Upload Resume
-          </button>
-        ) : (
-          <button
-            onClick={() => navigate('/signup')}
-            className="btn bg-[#DE5499] text-white font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition"
-          >
-            Get Started
-          </button>
-        )}
+        <button
+          onClick={handleGetStarted}
+          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${
+            isStudent 
+              ? 'bg-[#264143]' 
+              : 'bg-[#DE5499]'
+          }`}
+        >
+          {isStudent ? 'Upload Resume' : 'HR Login'}
+        </button>
 
         <div className="mt-10 text-xs text-gray-500">
           <span>Made for placements & recruitment</span>
         </div>
       </div>
-</div>
+    </div>
   );
 };
 
