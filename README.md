@@ -24,7 +24,6 @@ Resume Portal is a web-based application designed to streamline the resume submi
 - **Notifications**: HR users receive email notifications when new resumes are uploaded.
 
 ### AWS Integration
-- **AWS Lambda**: Handles backend logic for resume upload and processing.
 - **AWS S3**: Stores uploaded resumes securely.
 - **AWS SNS**: Sends notifications to HR users.
 - **AWS Textract**: Extracts text and metadata from resumes.
