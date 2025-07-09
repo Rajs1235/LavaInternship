@@ -16,6 +16,24 @@ const HRDashboard = () => {
   const [currentStatus, setCurrentStatus] = useState(null);
   const navigate = useNavigate();
 
+  const processStats = (data) => {
+  // Gender distribution
+  const genderCount = data.reduce((acc, curr) => {
+    const gender = curr.gender || 'Unknown';
+    acc[gender] = (acc[gender] || 0) + 1;
+    return acc;
+  }, {});
+  setGenderData(Object.entries(genderCount).map(([name, value]) => ({ name, value })));
+
+  // Status distribution
+  const statusCount = data.reduce((acc, curr) => {
+    const status = curr.status || 'Not Available';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  setStatusData(Object.entries(statusCount).map(([name, value]) => ({ name, value })));
+};
+
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
@@ -47,35 +65,40 @@ const HRDashboard = () => {
 
     fetchCandidates();
   }, []);
+const updateStatus = async (status) => {
+  try {
+    setCurrentStatus(status);
 
-  const updateStatus = async (status) => {
-    try {
-      setCurrentStatus(status);
+    await axios.post("https://c27ubyy9fi.execute-api.ap-south-1.amazonaws.com/UpdateStatus", {
+      resume_id: selectedCandidate.resume_id,
+      email: selectedCandidate.email,
+      first_name: selectedCandidate.first_name,
+      status,
+    });
 
-      await axios.post("https://c27ubyy9fi.execute-api.ap-south-1.amazonaws.com/UpdateStatus", {
-        resume_id: selectedCandidate.resume_id,
-        email: selectedCandidate.email,
-        first_name: selectedCandidate.first_name,
-        status,
-      });
+    alert(`Candidate ${selectedCandidate.first_name} marked as ${status}.`);
 
-      alert(`Candidate ${selectedCandidate.first_name} marked as ${status}.`);
-
-      // Update local state
-      setCandidates(prev =>
-        prev.map(c =>
-          c.resume_id === selectedCandidate.resume_id
-            ? { ...c, status }
-            : c
-        )
+    // Update local candidates state and reprocess charts
+    setCandidates(prev => {
+      const updated = prev.map(c =>
+        c.resume_id === selectedCandidate.resume_id
+          ? { ...c, status }
+          : c
       );
+      processStats(updated);  // 💡 Recalculate distribution data
+      return updated;
+    });
 
+    if (status === "Rejected") {
+      setSelectedCandidate(null);
+    } else {
       setSelectedCandidate(prev => ({ ...prev, status }));
-    } catch (err) {
-      console.error("Failed to update status:", err);
-      alert("Failed to update status");
     }
-  };
+  } catch (err) {
+    console.error("Failed to update status:", err);
+    alert("Failed to update status");
+  }
+};
 
   const handleLogout = async () => {
     await signOut();
@@ -95,18 +118,28 @@ const HRDashboard = () => {
 
         <h3 className="text-lg font-semibold text-[#264143] mb-4">Candidates</h3>
         <ul className="space-y-2">
-          {candidates.map(c => (
-            <li
-              key={c.resume_id}
-              className={`p-2 border rounded-md shadow-sm cursor-pointer ${selectedCandidate?.resume_id === c.resume_id ? 'bg-[#EDDCD9]' : ''}`}
-              onClick={() => setSelectedCandidate(c)}
-            >
-              <p className="font-semibold text-[#264143]">{c.first_name} {c.last_name}</p>
-              <p className="text-xs text-gray-600">{c.email}</p>
-              <button className="text-sm text-blue-600 hover:underline mt-1">View Profile</button>
-            </li>
-          ))}
+          {candidates
+            .filter(c => c.status !== "Rejected") // Remove rejected candidates
+            .map(c => (
+              <li
+                key={c.resume_id}
+                className={`p-2 border rounded-md shadow-sm cursor-pointer ${selectedCandidate?.resume_id === c.resume_id ? 'bg-[#EDDCD9]' : ''}`}
+                onClick={() => setSelectedCandidate(c)}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold text-[#264143]">{c.first_name} {c.last_name}</p>
+                    <p className="text-xs text-gray-600">{c.email}</p>
+                    {c.status === "Advanced" && (
+                      <span className="text-green-700 text-xs font-semibold">✅ Advanced</span>
+                    )}
+                  </div>
+                  <button className="text-sm text-blue-600 hover:underline mt-1">View Profile</button>
+                </div>
+              </li>
+            ))}
         </ul>
+
       </div>
 
       {/* Main Panel */}
