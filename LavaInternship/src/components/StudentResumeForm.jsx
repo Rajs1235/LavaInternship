@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
 const StudentResumeForm = () => {
+  const apiEndpoint = "https://70vamjew18.execute-api.ap-south-1.amazonaws.com/upload-url";
   const [toastVisible, setToastVisible] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const data = {
+    const file = e.target.resume.files[0];
+    const formData = {
       name: e.target.name.value,
       email: e.target.email.value,
       contact: e.target.contact.value,
@@ -17,15 +19,32 @@ const StudentResumeForm = () => {
       gender: e.target.Gender.value,
       workPref: e.target.workPref.value,
       linkedIn: e.target.linkedIn.value,
-      resume: e.target.resume.files[0]?.name || ''
+      resume: file.name
     };
 
-    console.log("Form Submitted:", data);
+    try {
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
 
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 3000);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Upload failed");
 
-    e.target.reset();
+      // PUT file to S3
+      await fetch(result.upload_url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/pdf" },
+        body: file
+      });
+
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
+      e.target.reset();
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
   };
 
   return (
@@ -82,7 +101,6 @@ const StudentResumeForm = () => {
               <input type="text" name="linkedIn" className="w-full border rounded-md px-3 py-2" placeholder="Enter LinkedIn URL" required />
             </div>
           </div>
-
           <div>
             <label className="block font-medium mb-1">Upload Resume (PDF)</label>
             <input type="file" name="resume" accept=".pdf" className="w-full border rounded-md px-3 py-2" required />
@@ -95,7 +113,6 @@ const StudentResumeForm = () => {
           </button>
         </form>
 
-        {/* Animated Toast */}
         {toastVisible && (
           <div className="fixed bottom-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in">
             ✅ Form submitted successfully!
@@ -103,7 +120,6 @@ const StudentResumeForm = () => {
         )}
       </div>
 
-      {/* Toast Slide Animation */}
       <style>{`
         @keyframes slideIn {
           0% { transform: translateX(150%); opacity: 0; }
