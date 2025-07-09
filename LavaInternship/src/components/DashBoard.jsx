@@ -11,10 +11,10 @@ const COLORS = ['#264143', '#DE5499', '#E99F4C'];
 const HRDashboard = () => {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [candidates, setCandidates] = useState([]);
-  const navigate = useNavigate();
-
   const [genderData, setGenderData] = useState([]);
   const [statusData, setStatusData] = useState([]);
+  const [currentStatus, setCurrentStatus] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -34,10 +34,9 @@ const HRDashboard = () => {
         acc[gender] = (acc[gender] || 0) + 1;
         return acc;
       }, {});
-
       setGenderData(Object.entries(genderCount).map(([name, value]) => ({ name, value })));
 
-      // Status distribution (you can change 'status' to whatever field you store this in)
+      // Status distribution
       const statusCount = data.reduce((acc, curr) => {
         const status = curr.status || 'Not Available';
         acc[status] = (acc[status] || 0) + 1;
@@ -48,6 +47,35 @@ const HRDashboard = () => {
 
     fetchCandidates();
   }, []);
+
+  const updateStatus = async (status) => {
+    try {
+      setCurrentStatus(status);
+
+      await axios.post("https://c27ubyy9fi.execute-api.ap-south-1.amazonaws.com/UpdateStatus", {
+        resume_id: selectedCandidate.resume_id,
+        email: selectedCandidate.email,
+        first_name: selectedCandidate.first_name,
+        status,
+      });
+
+      alert(`Candidate ${selectedCandidate.first_name} marked as ${status}.`);
+
+      // Update local state
+      setCandidates(prev =>
+        prev.map(c =>
+          c.resume_id === selectedCandidate.resume_id
+            ? { ...c, status }
+            : c
+        )
+      );
+
+      setSelectedCandidate(prev => ({ ...prev, status }));
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      alert("Failed to update status");
+    }
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -70,9 +98,7 @@ const HRDashboard = () => {
           {candidates.map(c => (
             <li
               key={c.resume_id}
-              className={`p-2 border rounded-md shadow-sm cursor-pointer ${
-                selectedCandidate?.resume_id === c.resume_id ? 'bg-[#EDDCD9]' : ''
-              }`}
+              className={`p-2 border rounded-md shadow-sm cursor-pointer ${selectedCandidate?.resume_id === c.resume_id ? 'bg-[#EDDCD9]' : ''}`}
               onClick={() => setSelectedCandidate(c)}
             >
               <p className="font-semibold text-[#264143]">{c.first_name} {c.last_name}</p>
@@ -145,13 +171,16 @@ const HRDashboard = () => {
               <p>🎓 Grad: {selectedCandidate.grad_marks}% ({selectedCandidate.grad_year})</p>
               <p>🏫 12th: {selectedCandidate.marks12}% ({selectedCandidate.pass12})</p>
               <p>💼 Prefers: {selectedCandidate.work_pref}</p>
-              <p>🔗 <a href={selectedCandidate.linkedin} target="_blank" rel="noreferrer" className="text-blue-600 underline">LinkedIn Profile</a></p>
+              {selectedCandidate.linkedin && (
+                <p>🔗 <a href={selectedCandidate.linkedin} target="_blank" rel="noreferrer" className="text-blue-600 underline">LinkedIn Profile</a></p>
+              )}
             </div>
 
+            {/* Skills */}
             <div>
               <h3 className="font-semibold text-[#264143] mb-2">Skills</h3>
               <div className="flex flex-wrap gap-2">
-                {selectedCandidate.skills.map((skill, idx) => (
+                {selectedCandidate.skills?.map((skill, idx) => (
                   <span key={idx} className="bg-[#264143] text-white text-xs px-2 py-1 rounded-full">
                     {skill}
                   </span>
@@ -159,6 +188,7 @@ const HRDashboard = () => {
               </div>
             </div>
 
+            {/* Organizations */}
             <div>
               <h3 className="font-semibold text-[#264143] mb-2">Organizations</h3>
               <div className="flex flex-wrap gap-2">
@@ -170,11 +200,18 @@ const HRDashboard = () => {
               </div>
             </div>
 
+            {/* Status Action Buttons */}
             <div className="mt-6 flex gap-4">
-              <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md" onClick={() => alert(`${selectedCandidate.first_name} advanced!`)}>
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+                onClick={() => updateStatus("Advanced")}
+              >
                 ✅ Advance
               </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md" onClick={() => alert(`${selectedCandidate.first_name} rejected.`)}>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
+                onClick={() => updateStatus("Rejected")}
+              >
                 ❌ Reject
               </button>
             </div>
