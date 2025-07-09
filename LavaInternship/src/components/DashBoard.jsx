@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { signOut } from 'aws-amplify/auth';
 import axios from 'axios';
 import {
@@ -17,22 +18,20 @@ const HRDashboard = () => {
   const navigate = useNavigate();
 
   const processStats = (data) => {
-  // Gender distribution
-  const genderCount = data.reduce((acc, curr) => {
-    const gender = curr.gender || 'Unknown';
-    acc[gender] = (acc[gender] || 0) + 1;
-    return acc;
-  }, {});
-  setGenderData(Object.entries(genderCount).map(([name, value]) => ({ name, value })));
+    const genderCount = data.reduce((acc, curr) => {
+      const gender = curr.gender || 'Unknown';
+      acc[gender] = (acc[gender] || 0) + 1;
+      return acc;
+    }, {});
+    setGenderData(Object.entries(genderCount).map(([name, value]) => ({ name, value })));
 
-  // Status distribution
-  const statusCount = data.reduce((acc, curr) => {
-    const status = curr.status || 'Not Available';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
-  setStatusData(Object.entries(statusCount).map(([name, value]) => ({ name, value })));
-};
+    const statusCount = data.reduce((acc, curr) => {
+      const status = curr.status || 'Not Available';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+    setStatusData(Object.entries(statusCount).map(([name, value]) => ({ name, value })));
+  };
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -45,60 +44,41 @@ const HRDashboard = () => {
       }
     };
 
-    const processStats = (data) => {
-      // Gender distribution
-      const genderCount = data.reduce((acc, curr) => {
-        const gender = curr.gender || 'Unknown';
-        acc[gender] = (acc[gender] || 0) + 1;
-        return acc;
-      }, {});
-      setGenderData(Object.entries(genderCount).map(([name, value]) => ({ name, value })));
-
-      // Status distribution
-      const statusCount = data.reduce((acc, curr) => {
-        const status = curr.status || 'Not Available';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {});
-      setStatusData(Object.entries(statusCount).map(([name, value]) => ({ name, value })));
-    };
-
     fetchCandidates();
   }, []);
-const updateStatus = async (status) => {
-  try {
-    setCurrentStatus(status);
 
-    await axios.post("https://c27ubyy9fi.execute-api.ap-south-1.amazonaws.com/UpdateStatus", {
-      resume_id: selectedCandidate.resume_id,
-      email: selectedCandidate.email,
-      first_name: selectedCandidate.first_name,
-      status,
-    });
+  const updateStatus = async (status) => {
+    try {
+      setCurrentStatus(status);
+      await axios.post("https://c27ubyy9fi.execute-api.ap-south-1.amazonaws.com/UpdateStatus", {
+        resume_id: selectedCandidate.resume_id,
+        email: selectedCandidate.email,
+        first_name: selectedCandidate.first_name,
+        status,
+      });
 
-    alert(`Candidate ${selectedCandidate.first_name} marked as ${status}.`);
+      alert(`Candidate ${selectedCandidate.first_name} marked as ${status}.`);
 
-    // Update local candidates state and reprocess charts
-    setCandidates(prev => {
-      const updated = prev.map(c =>
-        c.resume_id === selectedCandidate.resume_id
-          ? { ...c, status }
-          : c
-      );
-      processStats(updated);  // 💡 Recalculate distribution data
-      return updated;
-    });
+      setCandidates(prev => {
+        const updated = prev.map(c =>
+          c.resume_id === selectedCandidate.resume_id
+            ? { ...c, status }
+            : c
+        );
+        processStats(updated);
+        return updated;
+      });
 
-    if (status === "Rejected") {
-      setSelectedCandidate(null);
-    } else {
-      setSelectedCandidate(prev => ({ ...prev, status }));
+      if (status === "Rejected") {
+        setSelectedCandidate(null);
+      } else {
+        setSelectedCandidate(prev => ({ ...prev, status }));
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      alert("Failed to update status");
     }
-  } catch (err) {
-    console.error("Failed to update status:", err);
-    alert("Failed to update status");
-  }
-};
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -107,24 +87,44 @@ const updateStatus = async (status) => {
 
   return (
     <div className="min-h-screen w-full bg-[#dda5a5] flex font-['Segoe_UI']">
-      {/* Sidebar */}
+
       <div className="w-1/4 min-h-screen bg-white border-r border-[#264143] p-4 overflow-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-[#264143]">HR Dashboard</h2>
-          <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setSelectedCandidate(null);
+                navigate('/dashboard');
+              }}
+              className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center"
+              title="Home"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6" />
+              </svg>
+              Home
+
+
+            </button>
+            <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+              Logout
+            </button>
+          </div>
         </div>
 
         <h3 className="text-lg font-semibold text-[#264143] mb-4">Candidates</h3>
         <ul className="space-y-2">
           {candidates
-            .filter(c => c.status !== "Rejected") // Remove rejected candidates
+            .filter(c => c.status !== "Rejected")
             .map(c => (
               <li
                 key={c.resume_id}
                 className={`p-2 border rounded-md shadow-sm cursor-pointer ${selectedCandidate?.resume_id === c.resume_id ? 'bg-[#EDDCD9]' : ''}`}
-                onClick={() => setSelectedCandidate(c)}
+                onClick={() => {
+                  setSelectedCandidate(c);
+                  navigate('/dashboard');
+                }}
               >
                 <div className="flex justify-between items-center">
                   <div>
@@ -137,12 +137,20 @@ const updateStatus = async (status) => {
                       <span className="text-green-700 text-xs font-semibold">⏳ Under Review</span>
                     )}
                   </div>
-                  <button className="text-sm text-blue-600 hover:underline mt-1">View Profile</button>
+                  <button
+                    className="text-sm text-blue-600 hover:underline mt-1"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setSelectedCandidate(c);
+                      navigate('/dashboard');
+                    }}
+                  >
+                    View Profile
+                  </button>
                 </div>
               </li>
             ))}
         </ul>
-
       </div>
 
       {/* Main Panel */}
@@ -236,7 +244,25 @@ const updateStatus = async (status) => {
               </div>
             </div>
 
-            {/* Status Action Buttons */}
+            {/* Resume Preview */}
+            {selectedCandidate.resume_url && (
+              <div className="mt-6">
+                {/* Download */}
+                <div className="mt-4">
+                  <a
+                    href={selectedCandidate.resume_url}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                  >
+                    ⬇️ Preview Resume (PDF)
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div className="mt-6 flex gap-4">
               <button
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
