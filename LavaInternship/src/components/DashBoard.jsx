@@ -133,6 +133,9 @@ const updateStatus = async (status) => {
                     {c.status === "Advanced" && (
                       <span className="text-green-700 text-xs font-semibold">✅ Advanced</span>
                     )}
+                    {c.status === "Under Review" && (
+                      <span className="text-green-700 text-xs font-semibold">⏳ Under Review</span>
+                    )}
                   </div>
                   <button className="text-sm text-blue-600 hover:underline mt-1">View Profile</button>
                 </div>
