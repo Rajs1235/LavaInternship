@@ -256,8 +256,11 @@ const handleSubmit = async (e) => {
 
 
   return (
-    <div className=" min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white shadow-xl rounded-xl p-6 md:p-8 w-full max-w-3xl mx-auto my-8">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div
+        className="bg-white shadow-xl rounded-none p-4 w-full mx-0 my-0"
+        style={{ maxHeight: '100vh', overflowY: 'auto' }}
+      >
         <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
           🎓 Student Resume Submission
         </h2>

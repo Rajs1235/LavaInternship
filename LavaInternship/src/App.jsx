@@ -7,8 +7,9 @@ import StudentResumeForm from './components/StudentResumeForm';
 import { Amplify } from 'aws-amplify';
 import { Authenticator } from '@aws-amplify/ui-react';
 import { getCurrentUser } from 'aws-amplify/auth';
+import JobPostingForm from './components/JobPosting';
 import '@aws-amplify/ui-react/styles.css';
-
+import Navbar from './components/Navbar';
 import awsExports from './aws-exports';
 
 // Configure Amplify
@@ -89,6 +90,7 @@ function App() {
         
         {/* HR Authentication Route */}
         <Route path="/hr-login" element={<HRLogin />} />
+        <Route path="/navbar" element={<Navbar />} />
         
         {/* Protected HR Dashboard Route */}
         <Route 
@@ -96,6 +98,15 @@ function App() {
           element={
             <ProtectedRoute>
               <HRDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/post-job" 
+          element={
+            <ProtectedRoute>
+              <JobPostingForm />
             </ProtectedRoute>
           } 
         />
