@@ -11,7 +11,7 @@ import JobPostingForm from './components/JobPosting';
 import '@aws-amplify/ui-react/styles.css';
 import Navbar from './components/Navbar';
 import awsExports from './aws-exports';
-
+import JobListing from './components/JobListing';
 // Configure Amplify
 Amplify.configure(awsExports);
 
@@ -86,12 +86,13 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
+
         <Route path="/studentform" element={<StudentResumeForm />} />
         
         {/* HR Authentication Route */}
         <Route path="/hr-login" element={<HRLogin />} />
         <Route path="/navbar" element={<Navbar />} />
-        
+        <Route path="/job-listings" element={<JobListing/>}/>  
         {/* Protected HR Dashboard Route */}
         <Route 
           path="/dashboard" 

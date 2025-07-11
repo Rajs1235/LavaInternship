@@ -10,7 +10,8 @@ const Home = () => {
     if (isStudent) {
       // Students go directly to resume form without authentication
       navigate('/studentform');
-    } else {
+    } 
+    else {
       // HR users go to Cognito login
       navigate('/hr-login');
     }
@@ -62,11 +63,10 @@ const Home = () => {
 
         <button
           onClick={handleGetStarted}
-          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${
-            isStudent 
-              ? 'bg-[#264143]' 
+          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${isStudent
+              ? 'bg-[#264143]'
               : 'bg-[#DE5499]'
-          }`}
+            }`}
         >
           {isStudent ? 'Upload Resume' : 'HR Login'}
         </button>
