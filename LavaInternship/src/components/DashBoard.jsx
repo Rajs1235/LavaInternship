@@ -210,6 +210,7 @@ const HRDashboard = () => {
             <h2 className="text-2xl font-bold text-[#264143]">{selectedCandidate.first_name} {selectedCandidate.last_name}</h2>
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
               <p>📧 {selectedCandidate.email}</p>
+              <p>📍 {selectedCandidate.address}</p>
               <p>📞 {selectedCandidate.phone}</p>
               <p>🚻 {selectedCandidate.gender}</p>
               <p>🎓 Grad: {selectedCandidate.grad_marks}% ({selectedCandidate.grad_year})</p>
