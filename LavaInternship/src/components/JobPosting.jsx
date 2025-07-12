@@ -64,7 +64,7 @@ const JobPostingForm = () => {
             };
 
             // Replace with your actual API endpoint
-            // await axios.post('https://your-api-endpoint.com/jobs', processedData);
+            await axios.post('https://7otecyotv1.execute-api.ap-south-1.amazonaws.com/PostJob', processedData);
 
             console.log('Job posting data:', processedData);
 
@@ -72,7 +72,7 @@ const JobPostingForm = () => {
             setTimeout(() => {
                 setSubmitSuccess(false);
                 reset();
-                navigate('/hr-dashboard');
+                navigate('/dashboard');
             }, 2000);
 
         } catch (error) {

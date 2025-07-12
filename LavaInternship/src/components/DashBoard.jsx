@@ -81,11 +81,6 @@ const HRDashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/');
-  };
-
   const handleHome = () => {
     setSelectedCandidate(null);
     navigate('/dashboard');
