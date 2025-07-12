@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signOut } from 'aws-amplify/auth';
 
 const Navbar = ({ onHomeClick }) => {
     const navigate = useNavigate();
@@ -13,7 +14,8 @@ const Navbar = ({ onHomeClick }) => {
         navigate('/post-job');
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await signOut();
         navigate('/');
     };
 

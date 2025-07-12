@@ -1,6 +1,27 @@
-import React, { useState } from "react";
+import React, { useState,useEffect  } from "react";
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const StudentResumeForm = () => {
+
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [jobInfo, setJobInfo] = useState({ jobId: null, jobTitle: null });
+
+  useEffect(() => {
+    // // Method 1: From localStorage (if using the first approach)
+    const jobId = localStorage.getItem('applicationJobId');
+    const jobTitle = localStorage.getItem('applicationJobTitle');
+
+    // Method 2: From URL params (if using the second approach)
+    // const jobId = searchParams.get('jobId');
+    // const jobTitle = searchParams.get('jobTitle');
+
+    if (jobId) {
+      setJobInfo({ jobId, jobTitle });
+    }
+  }, []);
+
+
   const apiEndpoint =
     "https://70vamjew18.execute-api.ap-south-1.amazonaws.com/upload-url";
   const [toastVisible, setToastVisible] = useState(false);
@@ -124,15 +145,14 @@ const StudentResumeForm = () => {
       case "Gender":
       case "workPref":
         if (!value) {
-          newErrors[name] = `Please select ${
-            name === "Gender" ? "a gender" : "work preference"
-          }`;
+          newErrors[name] = `Please select ${name === "Gender" ? "a gender" : "work preference"
+            }`;
         } else {
           delete newErrors[name];
         }
         break;
 
-  
+
       case "resume":
         const fileValidation = validateFile(file);
         if (!fileValidation.valid) {
@@ -159,100 +179,108 @@ const StudentResumeForm = () => {
     const file = e.target.files[0];
     validateField("resume", null, file);
   };
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const file = e.target.resume.files[0];
+    const file = e.target.resume.files[0];
 
-  const formData = {
-    name: e.target.name.value.trim(),
-    email: e.target.email.value.trim(),
-    contact: e.target.contact.value.trim(),
-    pass12: e.target.pass12.value,
-    gradYear: e.target.gradYear.value,
-    marks12: e.target.marks12.value,
-    gradMarks: e.target.gradMarks.value,
-    gender: e.target.Gender.value,
-    workPref: e.target.workPref.value,
-    linkedIn: e.target.linkedIn.value.trim(),
-    address: e.target.address.value.trim(),
-    resume: file?.name || "",
-  };
+    const formData = {
+      name: e.target.name.value.trim(),
+      email: e.target.email.value.trim(),
+      contact: e.target.contact.value.trim(),
+      pass12: e.target.pass12.value,
+      gradYear: e.target.gradYear.value,
+      marks12: e.target.marks12.value,
+      gradMarks: e.target.gradMarks.value,
+      gender: e.target.Gender.value,
+      workPref: e.target.workPref.value,
+      linkedIn: e.target.linkedIn.value.trim(),
+      address: e.target.address.value.trim(),
+      resume: file?.name || "",
+      jobId: jobInfo.jobId, // Add this line
+      jobTitle: jobInfo.jobTitle // Add this line
+    };
 
-  console.log("📤 Form Data Prepared:", formData);
+    console.log("📤 Form Data Prepared:", formData);
 
-  let localErrors = {};
-  const collectError = (name, valid) => {
-    if (!valid) localErrors[name] = true;
-  };
+    let localErrors = {};
+    const collectError = (name, valid) => {
+      if (!valid) localErrors[name] = true;
+    };
 
-  // Perform all validations
-  collectError("name", validateField("name", formData.name));
-  collectError("email", validateField("email", formData.email));
-  collectError("contact", validateField("contact", formData.contact));
-  collectError("pass12", validateField("pass12", formData.pass12));
-  collectError("gradYear", validateField("gradYear", formData.gradYear));
-  collectError("gradMarks", validateField("gradMarks", formData.gradMarks));
-  collectError("Gender", validateField("Gender", formData.gender));
-  collectError("workPref", validateField("workPref", formData.workPref));
-  collectError("resume", validateField("resume", null, file));
+    // Perform all validations
+    collectError("name", validateField("name", formData.name));
+    collectError("email", validateField("email", formData.email));
+    collectError("contact", validateField("contact", formData.contact));
+    collectError("pass12", validateField("pass12", formData.pass12));
+    collectError("gradYear", validateField("gradYear", formData.gradYear));
+    collectError("gradMarks", validateField("gradMarks", formData.gradMarks));
+    collectError("Gender", validateField("Gender", formData.gender));
+    collectError("workPref", validateField("workPref", formData.workPref));
+    collectError("resume", validateField("resume", null, file));
 
-  const isValid = Object.keys(localErrors).length === 0;
+    const isValid = Object.keys(localErrors).length === 0;
 
-  if (!isValid) {
-    console.warn("⚠️ Validation failed. Local errors:", localErrors);
-    const firstError = Object.keys(localErrors)[0];
-    if (firstError) {
-      document.getElementsByName(firstError)[0]?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
+    if (!isValid) {
+      console.warn("⚠️ Validation failed. Local errors:", localErrors);
+      const firstError = Object.keys(localErrors)[0];
+      if (firstError) {
+        document.getElementsByName(firstError)[0]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+      return;
+    }
+
+    try {
+      console.log("📡 Sending form data to API:", apiEndpoint);
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
+
+      const result = await res.json();
+      console.log("✅ Response from Lambda:", result);
+
+      if (!res.ok) {
+        console.error("❌ API error response:", result);
+        throw new Error(result.error || "Upload failed");
+      }
+
+      if (!result.upload_url) {
+        throw new Error("No upload URL received from server");
+      }
+
+      console.log("📁 Uploading file to S3:", result.upload_url);
+      const uploadResponse = await fetch(result.upload_url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/pdf" },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        console.error("❌ S3 upload failed:", await uploadResponse.text());
+        throw new Error("Failed to upload file to S3");
+      }
+
+      console.log("✅ File uploaded successfully");
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
+
+      // Clear job info from localStorage
+      localStorage.removeItem('applicationJobId');
+      localStorage.removeItem('applicationJobTitle');
+
+      e.target.reset();
+      setErrors({});
+    } catch (err) {
+      console.error("🚨 Submission error:", err);
+      alert("Error: " + err.message);
     }
-    return;
-  }
-
-  try {
-    console.log("📡 Sending form data to API:", apiEndpoint);
-    const res = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    const result = await res.json();
-    console.log("✅ Response from Lambda:", result);
-
-    if (!res.ok) {
-      console.error("❌ API error response:", result);
-      throw new Error(result.error || "Upload failed");
-    }
-
-    if (!result.upload_url) {
-      throw new Error("No upload URL received from server");
-    }
-
-    console.log("📁 Uploading file to S3:", result.upload_url);
-    const uploadResponse = await fetch(result.upload_url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/pdf" },
-      body: file,
-    });
-
-    if (!uploadResponse.ok) {
-      console.error("❌ S3 upload failed:", await uploadResponse.text());
-      throw new Error("Failed to upload file to S3");
-    }
-
-    console.log("✅ File uploaded successfully");
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 3000);
-    e.target.reset();
-    setErrors({});
-  } catch (err) {
-    console.error("🚨 Submission error:", err);
-    alert("Error: " + err.message);
-  }
-};
+  };
 
 
   return (
@@ -263,6 +291,11 @@ const handleSubmit = async (e) => {
       >
         <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
           🎓 Student Resume Submission
+          {jobInfo.jobTitle && (
+            <div className="text-lg font-normal text-blue-600 mt-2">
+              Applying for: {jobInfo.jobTitle}
+            </div>
+          )}
         </h2>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -276,9 +309,8 @@ const handleSubmit = async (e) => {
               <input
                 type="text"
                 name="name"
-                className={`w-full border-2 ${
-                  errors.name ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.name ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="Enter your full name"
                 required
                 onBlur={handleBlur}
@@ -296,9 +328,8 @@ const handleSubmit = async (e) => {
               <input
                 type="email"
                 name="email"
-                className={`w-full border-2 ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.email ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="example@email.com"
                 required
                 onBlur={handleBlur}
@@ -317,9 +348,8 @@ const handleSubmit = async (e) => {
                 type="tel"
                 name="contact"
                 pattern="[6-9]\d{9}"
-                className={`w-full border-2 ${
-                  errors.contact ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.contact ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="10-digit mobile number"
                 required
                 onBlur={handleBlur}
@@ -336,9 +366,8 @@ const handleSubmit = async (e) => {
               </label>
               <select
                 name="Gender"
-                className={`w-full border-2 ${
-                  errors.Gender ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.Gender ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
                 onBlur={handleBlur}
                 defaultValue=""
@@ -363,9 +392,8 @@ const handleSubmit = async (e) => {
               <input
                 type="date"
                 name="pass12"
-                className={`w-full border-2 ${
-                  errors.pass12 ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.pass12 ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
                 min="1990-01-01"
                 max={`${new Date().getFullYear()}-12-31`}
@@ -387,9 +415,8 @@ const handleSubmit = async (e) => {
                 min="0"
                 max="100"
                 step="0.01"
-                className={`w-full border-2 ${
-                  errors.marks12 ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.marks12 ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="e.g., 85.5"
                 onBlur={handleBlur}
               />
@@ -406,9 +433,8 @@ const handleSubmit = async (e) => {
               <input
                 type="date"
                 name="gradYear"
-                className={`w-full border-2 ${
-                  errors.gradYear ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.gradYear ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
                 min="1990-01-01"
                 max={`${new Date().getFullYear() + 6}-12-31`}
@@ -430,9 +456,8 @@ const handleSubmit = async (e) => {
                 min="0"
                 max="100"
                 step="0.01"
-                className={`w-full border-2 ${
-                  errors.gradMarks ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.gradMarks ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="e.g., 75.0"
                 required
                 onBlur={handleBlur}
@@ -449,9 +474,8 @@ const handleSubmit = async (e) => {
               </label>
               <select
                 name="workPref"
-                className={`w-full border-2 ${
-                  errors.workPref ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.workPref ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
                 onBlur={handleBlur}
                 defaultValue=""
@@ -476,9 +500,8 @@ const handleSubmit = async (e) => {
               <input
                 type="text"
                 name="address"
-                className={`w-full border-2 ${
-                  errors.address ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.address ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="Enter your full address"
                 required
                 onBlur={handleBlur}
@@ -496,9 +519,8 @@ const handleSubmit = async (e) => {
               <input
                 type="url"
                 name="linkedIn"
-                className={`w-full border-2 ${
-                  errors.linkedIn ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.linkedIn ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="https://linkedin.com/in/your-profile"
                 onBlur={handleBlur}
               />
@@ -516,9 +538,8 @@ const handleSubmit = async (e) => {
                 type="file"
                 name="resume"
                 accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className={`w-full border-2 ${
-                  errors.resume ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
+                className={`w-full border-2 ${errors.resume ? "border-red-500" : "border-gray-300"
+                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
                 required
                 onChange={handleFileChange}
               />
@@ -540,6 +561,19 @@ const handleSubmit = async (e) => {
             📤 Submit Resume
           </button>
         </form>
+
+        {jobInfo.jobId && (
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/job-listings')}
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              ← Back to Job Listings
+            </button>
+          </div>
+        )}
+
 
         {/* Success Toast */}
         {toastVisible && (

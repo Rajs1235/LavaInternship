@@ -65,7 +65,7 @@ const HRLogin = () => {
             Header() {
               return (
                 <div className="text-center mb-4">
-                 
+
                 </div>
               );
             }
@@ -88,30 +88,38 @@ function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/studentform" element={<StudentResumeForm />} />
-        
+
         {/* HR Authentication Route */}
         <Route path="/hr-login" element={<HRLogin />} />
-        <Route path="/navbar" element={<Navbar />} />
-        <Route path="/job-listings" element={<JobListing/>}/>  
+        <Route path="/job-listings" element={<JobListing />} />
         {/* Protected HR Dashboard Route */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <HRDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
 
-        <Route 
-          path="/post-job" 
+        <Route
+          path="/navbar"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/post-job"
           element={
             <ProtectedRoute>
               <JobPostingForm />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
