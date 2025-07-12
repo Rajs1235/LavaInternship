@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, DollarSign, Users, Calendar, Building, Briefcase, Star, X, User, FileText, Target, Award, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const JobListing = () => {
     const [jobs, setJobs] = useState([]);
     const [filteredJobs, setFilteredJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const navigate = useNavigate();
     const [filters, setFilters] = useState({
         department: '',
         workType: '',
@@ -13,6 +15,19 @@ const JobListing = () => {
         experienceLevel: '',
         search: ''
     });
+
+    const handleApplyNow = (jobId, jobTitle) => {
+        // Store job info in localStorage for the form to access
+        localStorage.setItem('applicationJobId', jobId);
+        localStorage.setItem('applicationJobTitle', jobTitle);
+
+        // // Navigate to resume form
+        navigate('/studentform');
+
+        // Alternative: If you want to pass via URL params
+        // navigate(`/studentform?jobId=${jobId}&jobTitle=${encodeURIComponent(jobTitle)}`);
+    };
+
 
     // Fetch jobs from API
     useEffect(() => {
@@ -27,7 +42,7 @@ const JobListing = () => {
                     // Flatten grouped jobs
                     const allJobs = Object.values(groupedJobs).flat().map((job, index) => ({
                         ...job,
-                        id: index + 1, // provide fallback ID
+                        id: job.job_id, // provide fallback ID
                         jobTitle: job.jobTitle ?? "Untitled Job",
                         workType: job.workType ?? "N/A",
                         workMode: job.workMode ?? "N/A",
@@ -275,7 +290,9 @@ const JobListing = () => {
                     {/* Modal Footer */}
                     <div className="p-6 border-t border-gray-200 bg-gray-50">
                         <div className="flex gap-3">
-                            <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                            <button
+                                onClick={() => handleApplyNow(job.id, job.jobTitle)}
+                                className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
                                 Apply Now
                             </button>
                             <button
@@ -299,7 +316,7 @@ const JobListing = () => {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Job Openings</h1>
                     <p className="text-gray-600">Discover exciting career opportunities</p>
                 </div>
-                
+
                 {/* Filters */}
                 <div className="bg-white rounded-lg shadow-md p-6 mb-8 sticky top-0 z-10 backdrop-blur-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -473,7 +490,9 @@ const JobListing = () => {
 
                                     {/* Action Buttons */}
                                     <div className="flex gap-3">
-                                        <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium">
+                                        <button
+                                            onClick={() => handleApplyNow(job.id, job.jobTitle)}
+                                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium">
                                             Apply Now
                                         </button>
                                         <button

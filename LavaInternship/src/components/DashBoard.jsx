@@ -17,8 +17,20 @@ const HRDashboard = () => {
   const [statusData, setStatusData] = useState([]);
   const [currentStatus, setCurrentStatus] = useState(null);
   const navigate = useNavigate();
+  const [departmentData, setDepartmentData] = useState([]);
 
+
+  
+  
+  
   const processStats = (data) => {
+    const departmentCount = data.reduce((acc, curr) => {
+      const dept = curr.department || 'Unknown';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {});
+    setDepartmentData(Object.entries(departmentCount).map(([name, value]) => ({ name, value })));
+    
     const genderCount = data.reduce((acc, curr) => {
       const gender = curr.gender || 'Unknown';
       acc[gender] = (acc[gender] || 0) + 1;
@@ -193,6 +205,31 @@ const HRDashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+
+              {/* Department Chart */}
+              <div className="bg-white p-4 border-2 border-[#264143] rounded-xl shadow-md">
+                <h2 className="text-xl font-bold text-[#264143] mb-4">Department Distribution</h2>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={departmentData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      dataKey="value"
+                    >
+                      {departmentData.map((entry, index) => (
+                        <Cell key={`dept-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
             </div>
           ) : (
             <div className="bg-white border-2 border-[#264143] rounded-xl shadow-md p-6 space-y-4">
