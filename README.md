@@ -68,19 +68,28 @@ This architecture ensures secure, scalable, and efficient handling of resume sub
 
 ![aws backend architecture](/screenshots/ai-resume-screener.png)
 
+## React Frontend
+
+![React Frontend](/screenshots/frontend-diagram.png)
+
 ## Screenshots
 
-![aws backend architecture](/screenshots/home.png)
+![home](/screenshots/home.png)
 -----
-![aws backend architecture](/screenshots/Cognito-Signup-login.png)
+![hr-signup-login](/screenshots/Cognito-Signup-login.png)
 ----- 
-![aws backend architecture](/screenshots/dashboard-home.png)
+![dashboard-home](/screenshots/dashboard-home.png)
 ----- 
-![aws backend architecture](/screenshots/candidate-dashboard-view.png)
+![dashboard-candidate-view](/screenshots/candidate-dashboard-view.png)
 ----- 
-![aws backend architecture](/screenshots/resume-upload-form.png)
+![job-posting-form](/screenshots/post-job.png)
 ----- 
-
+![job listing](/screenshots/job-listings.png)
+----- 
+![job listing detail](/screenshots/job-listings-detail.png)
+----- 
+![resume form](/screenshots/resume-upload-form.png)
+----- 
 
 ## Installation
 
