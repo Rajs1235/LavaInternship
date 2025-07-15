@@ -272,6 +272,26 @@ const HRDashboard = () => {
                 </div>
               </div>
 
+              {/* Skill Match */}
+              {selectedCandidate.matched_skills?.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="font-semibold text-[#264143] mb-2">Skill Match</h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Matched {selectedCandidate.matched_skills.length} skills (
+                    <span className="font-semibold text-[#264143]">
+                      {selectedCandidate.match_percentage}%
+                    </span>)
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCandidate.matched_skills.map((skill, idx) => (
+                      <span key={idx} className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Resume Preview */}
               {selectedCandidate.resume_url && (
                 <div className="mt-6">
@@ -305,6 +325,7 @@ const HRDashboard = () => {
                   ❌ Reject
                 </button>
               </div>
+
             </div>
           )}
         </div>
