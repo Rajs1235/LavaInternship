@@ -20,9 +20,11 @@ const HRDashboard = () => {
   const [departmentData, setDepartmentData] = useState([]);
 
 
-  
-  
-  
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedCandidate]);
+
+
   const processStats = (data) => {
     const departmentCount = data.reduce((acc, curr) => {
       const dept = curr.department || 'Unknown';
@@ -30,7 +32,7 @@ const HRDashboard = () => {
       return acc;
     }, {});
     setDepartmentData(Object.entries(departmentCount).map(([name, value]) => ({ name, value })));
-    
+
     const genderCount = data.reduce((acc, curr) => {
       const gender = curr.gender || 'Unknown';
       acc[gender] = (acc[gender] || 0) + 1;
@@ -104,16 +106,15 @@ const HRDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#dda5a5] flex flex-col font-['Segoe_UI']">
+    <div className="min-h-screen h-screen w-full bg-[#dda5a5] flex flex-col font-['Segoe_UI'] overflow-hidden">
       {/* Navigation Bar */}
-      {/* <Navbar/> */}
       <Navbar onHomeClick={() => setSelectedCandidate(null)} />
 
 
       {/* Main Content */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-1/4 min-h-full bg-white border-r border-[#264143] p-4 overflow-auto">
+        <div className="w-1/4 h-full bg-white border-r border-[#264143] p-4 overflow-y-auto">
           <h3 className="text-lg font-semibold text-[#264143] mb-4">Candidates</h3>
           <ul className="space-y-2">
             {candidates
@@ -155,7 +156,7 @@ const HRDashboard = () => {
         </div>
 
         {/* Main Panel */}
-        <div className="w-3/4 p-6 overflow-auto">
+        <div className="w-3/4 h-full p-6 overflow-y-auto">
           {!selectedCandidate ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Gender Chart */}
