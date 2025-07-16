@@ -56,8 +56,8 @@ const HRLogin = () => {
     <div className="min-h-screen  flex items-center justify-center">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">HR Login</h2>
-          <p className="text-gray-600 mt-2">Sign in to access the dashboard</p>
+          <h2 className="text-3xl font-bold text-white">HR Login</h2>
+          <p className="text-white mt-2">Sign in to access the dashboard</p>
         </div>
         <Authenticator
           hideSignUp={false}
