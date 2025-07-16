@@ -153,7 +153,7 @@ const JobListing = () => {
                     {/* Modal Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                         <div className="flex-1">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">{job.jobTitle}</h2>
+                            <h2 className="text-2xl font-bold text-white-900 mb-2">{job.jobTitle}</h2>
                             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                                 <div className="flex items-center gap-1">
                                     <Building className="w-4 h-4" />
@@ -313,8 +313,8 @@ const JobListing = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-8 mt-12 sm:mt-16 md:mt-20">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Job Openings</h1>
-                    <p className="text-gray-600">Discover exciting career opportunities</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">Job Openings</h1>
+                    <p className="text-white">Discover exciting career opportunities</p>
                 </div>
 
                 {/* Filters */}

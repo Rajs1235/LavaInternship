@@ -8,48 +8,44 @@ const Home = () => {
 
   const handleGetStarted = () => {
     if (isStudent) {
-      // Students go directly to resume form without authentication
       navigate('/job-listings');
-    } 
-    else {
-      // HR users go to Cognito login
+    } else {
       navigate('/hr-login');
     }
   };
 
+  const handleToggle = () => setIsStudent((prev) => !prev);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative">
       {/* Toggle Switch */}
-      <div className="absolute top-10">
-        <div className="toggleWrapper">
-          <input
-            className="input"
-            id="roleSwitch"
-            type="checkbox"
-            checked={isStudent}
-            onChange={() => setIsStudent(!isStudent)}
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
+        <div
+          className="flex items-center gap-4 bg-white border border-[#264143] rounded-full px-6 py-2 shadow cursor-pointer"
+          onClick={handleToggle} // ✅ Entire toggle area is clickable
+        >
+          <FaLaptopCode
+            className={`text-2xl transition ${!isStudent ? 'text-[#264143]' : 'text-gray-400'}`}
+            title="HR"
           />
-          <label className="toggle" htmlFor="roleSwitch">
-            <span className="toggle__handler">
-              <span className="crater crater--1"></span>
-              <span className="crater crater--2"></span>
-              <span className="crater crater--3"></span>
-            </span>
-            <span className="star star--1"></span>
-            <span className="star star--2"></span>
-            <span className="star star--3"></span>
-            <span className="star star--4"></span>
-            <span className="star star--5"></span>
-            <span className="star star--6"></span>
-          </label>
-        </div>
-        <div className="flex justify-between mt-20 w-full px-12 text-4xl text-[#264143]">
-          <FaLaptopCode className={!isStudent ? '' : 'opacity-30'} />
-          <FaUserGraduate className={isStudent ? '' : 'opacity-30'} />
+          <div
+            className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+              isStudent ? 'bg-[#DE5499]' : 'bg-[#264143]'
+            }`}
+          >
+            <div
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
+                isStudent ? 'translate-x-6' : ''
+              }`}
+            />
+          </div>
+          <FaUserGraduate
+            className={`text-2xl transition ${isStudent ? 'text-[#DE5499]' : 'text-gray-400'}`}
+            title="Candidate"
+          />
         </div>
       </div>
 
-      {/* Card */}
       <div className="bg-white border-2 border-[#264143] rounded-2xl shadow-[3px_4px_0px_1px_#E99F4C] p-10 max-w-xl w-full text-center mt-40">
         <h1 className="text-3xl font-extrabold text-[#264143] mb-2">Welcome to AI Resume Screener</h1>
         <p className="text-lg text-[#DE5499] mb-6 font-semibold">
@@ -63,10 +59,9 @@ const Home = () => {
 
         <button
           onClick={handleGetStarted}
-          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${isStudent
-              ? 'bg-[#264143]'
-              : 'bg-[#DE5499]'
-            }`}
+          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${
+            isStudent ? 'bg-[#264143]' : 'bg-[#DE5499]'
+          }`}
         >
           {isStudent ? 'See Job Listings' : 'HR Login'}
         </button>
