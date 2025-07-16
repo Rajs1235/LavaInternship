@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { signOut } from 'aws-amplify/auth';
 import axios from 'axios';
 import {
-  PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer
+  PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 import Navbar from './Navbar';
 
@@ -12,6 +13,7 @@ const COLORS = ['#264143', '#DE5499', '#E99F4C', '#4ECDC4', '#45B7D1', '#96CEB4'
 
 const HRDashboard = () => {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [submissionData, setSubmissionData] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [filteredCandidates, setFilteredCandidates] = useState([]);
   const [genderData, setGenderData] = useState([]);
@@ -26,7 +28,9 @@ const HRDashboard = () => {
     department: '',
     status: '',
     gender: '',
-    workPref: ''
+    workPref: '',
+    dateFrom: '',
+    dateTo: ''
   });
 
   // Available filter options
@@ -90,43 +94,108 @@ const HRDashboard = () => {
     });
   };
 
+  const parseCandidateDate = (dateStr) => {
+    const [day, month, year] = dateStr.split(',')[0].split('/');
+    return new Date(`${year}-${month}-${day}`);
+  };
+
+  const processSubmissionStats = (data) => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+    const submissions = {
+      lastWeek: 0,
+      lastTwoWeeks: 0,
+      lastMonth: 0,
+      lastThreeMonths: 0
+    };
+
+    data.forEach(candidate => {
+      const candidateDate = parseCandidateDate(candidate.datetime);
+
+      if (candidateDate >= oneWeekAgo) {
+        submissions.lastWeek++;
+      } else if (candidateDate >= twoWeeksAgo) {
+        submissions.lastTwoWeeks++;
+      } else if (candidateDate >= oneMonthAgo) {
+        submissions.lastMonth++;
+      } else if (candidateDate >= threeMonthsAgo) {
+        submissions.lastThreeMonths++;
+      }
+    });
+
+    const chartData = [
+      { period: 'Last Week', submissions: submissions.lastWeek },
+      { period: 'Week 2', submissions: submissions.lastTwoWeeks },
+      { period: 'Weeks 3-4', submissions: submissions.lastMonth },
+      { period: 'Month 2-3', submissions: submissions.lastThreeMonths }
+    ];
+
+    setSubmissionData(chartData);
+  };
+
   const applyFilters = () => {
     console.log('=== APPLYING FILTERS ===');
     console.log('Current filters:', filters);
     console.log('Total candidates:', candidates.length);
 
-    // Start with all non-rejected candidates
+    // Initialize first
     let filtered = candidates.filter(c => c.status !== "Rejected");
     console.log('Step 1 - After removing rejected candidates:', filtered.length);
 
+    // Date From
+    if (filters.dateFrom) {
+      const dateFrom = new Date(filters.dateFrom);
+      filtered = filtered.filter(candidate => {
+        const candidateDate = parseCandidateDate(candidate.datetime);
+        return candidateDate >= dateFrom;
+      });
+    }
+
+    // Date To
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      const beforeCount = filtered.length;
+      filtered = filtered.filter(c => parseCandidateDate(c.datetime) <= toDate);
+      console.log(`Step 3 - After dateTo filter (${filters.dateTo}): ${beforeCount} → ${filtered.length}`);
+    }
+
+    // Department
     if (filters.department) {
       const beforeCount = filtered.length;
       filtered = filtered.filter(c => c.department === filters.department);
-      console.log(`Step 2 - After department filter (${filters.department}): ${beforeCount} → ${filtered.length}`);
+      console.log(`Step 4 - After department filter (${filters.department}): ${beforeCount} → ${filtered.length}`);
     }
 
+    // Status
     if (filters.status) {
       const beforeCount = filtered.length;
       filtered = filtered.filter(c => c.status === filters.status);
-      console.log(`Step 3 - After status filter (${filters.status}): ${beforeCount} → ${filtered.length}`);
+      console.log(`Step 5 - After status filter (${filters.status}): ${beforeCount} → ${filtered.length}`);
     }
 
+    // Gender
     if (filters.gender) {
       const beforeCount = filtered.length;
       filtered = filtered.filter(c => c.gender === filters.gender);
-      console.log(`Step 4 - After gender filter (${filters.gender}): ${beforeCount} → ${filtered.length}`);
+      console.log(`Step 6 - After gender filter (${filters.gender}): ${beforeCount} → ${filtered.length}`);
     }
 
+    // Work Preference
     if (filters.workPref) {
       const beforeCount = filtered.length;
       filtered = filtered.filter(c => c.work_pref === filters.workPref);
-      console.log(`Step 5 - After work pref filter (${filters.workPref}): ${beforeCount} → ${filtered.length}`);
+      console.log(`Step 7 - After workPref filter (${filters.workPref}): ${beforeCount} → ${filtered.length}`);
     }
 
     console.log('🎯 Final filtered candidates:', filtered.length);
-    console.log('Setting filtered candidates...');
     setFilteredCandidates(filtered);
   };
+
+
 
   const handleFilterChange = (filterType, value) => {
     console.log('=== FILTER CHANGE EVENT ===');
@@ -150,7 +219,9 @@ const HRDashboard = () => {
       department: '',
       status: '',
       gender: '',
-      workPref: ''
+      workPref: '',
+      dateFrom: '',
+      dateTo: ''
     });
   };
 
@@ -166,6 +237,8 @@ const HRDashboard = () => {
         setCandidates(data);
         processStats(data);
         extractFilterOptions(data);
+        // Process submission stats
+        processSubmissionStats(data);
 
         // Initialize with non-rejected candidates
         const initialFiltered = data.filter(c => c.status !== "Rejected");
@@ -303,7 +376,7 @@ const HRDashboard = () => {
                     <option value="">All Genders</option>
                     {filterOptions.genders.map(gender => (
                       <option key={gender} value={gender}>
-                        {gender === 'M' ? 'Male' : gender === 'F' ? 'Female' : gender}
+                        {gender === 'M' ? 'Male' : gender === 'F' ? 'Female' : gender ? gender : 'Other'}
                       </option>
                     ))}
                   </select>
@@ -322,6 +395,28 @@ const HRDashboard = () => {
                       <option key={pref} value={pref}>{pref}</option>
                     ))}
                   </select>
+                </div>
+
+                {/* Date From Filter */}
+                <div className="mb-3">
+                  <label className="block text-xs text-gray-600 mb-1">Date From</label>
+                  <input
+                    type="date"
+                    value={filters.dateFrom}
+                    onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                    className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-[#264143]"
+                  />
+                </div>
+
+                {/* Date To Filter */}
+                <div className="mb-3">
+                  <label className="block text-xs text-gray-600 mb-1">Date To</label>
+                  <input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                    className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-[#264143]"
+                  />
                 </div>
 
                 {/* Clear Filters Button */}
@@ -391,7 +486,7 @@ const HRDashboard = () => {
         {/* Main Panel */}
         <div className="w-3/4 h-full p-6 overflow-y-auto">
           {!selectedCandidate ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
               {/* Gender Chart */}
               <div className="bg-white p-4 border-2 border-[#264143] rounded-xl shadow-md">
                 <h2 className="text-xl font-bold text-[#264143] mb-4">Gender Distribution</h2>
@@ -463,7 +558,22 @@ const HRDashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+
+              {/* Submissions Bar Chart */}
+              <div className="bg-white p-4 border-2 border-[#264143] rounded-xl shadow-md">
+                <h2 className="text-xl font-bold text-[#264143] mb-4">Submissions Over Time</h2>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={submissionData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="submissions" fill="#264143" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
+
           ) : (
             <div className="bg-white border-2 border-[#264143] rounded-xl shadow-md p-6 space-y-4">
               <h2 className="text-2xl font-bold text-[#264143]">{selectedCandidate.first_name} {selectedCandidate.last_name}</h2>
