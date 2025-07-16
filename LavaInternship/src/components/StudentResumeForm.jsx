@@ -1,4 +1,4 @@
-import React, { useState,useEffect  } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const StudentResumeForm = () => {
@@ -181,10 +181,20 @@ const StudentResumeForm = () => {
     const file = e.target.files[0];
     validateField("resume", null, file);
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const now = new Date();
+    const submittedAt = now.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour12: true,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
     const file = e.target.resume.files[0];
 
     const formData = {
@@ -200,8 +210,9 @@ const StudentResumeForm = () => {
       linkedIn: e.target.linkedIn.value.trim(),
       address: e.target.address.value.trim(),
       resume: file?.name || "",
-      jobId: jobInfo.jobId, // Add this line
-      jobTitle: jobInfo.jobTitle // Add this line
+      jobId: jobInfo.jobId,
+      jobTitle: jobInfo.jobTitle,
+      submittedAt: submittedAt
     };
 
     console.log("📤 Form Data Prepared:", formData);
