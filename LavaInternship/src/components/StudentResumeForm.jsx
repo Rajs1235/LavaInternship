@@ -34,8 +34,10 @@ const StudentResumeForm = () => {
   };
 
   const validatePhone = (phone) => {
+    // Only check for standard 10-digit Indian mobile numbers
+    const cleaned = phone.trim().replace(/[\s\-()]/g, '');
     const phoneRegex = /^[6-9]\d{9}$/;
-    return phoneRegex.test(phone);
+    return phoneRegex.test(cleaned);
   };
 
   const validateMarks = (marks) => {

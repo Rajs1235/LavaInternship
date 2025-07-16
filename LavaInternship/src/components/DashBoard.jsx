@@ -37,14 +37,11 @@ const HRDashboard = () => {
     workPrefs: []
   });
 
-<<<<<<< HEAD
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [selectedCandidate]);
 
 
-=======
->>>>>>> 4419fce26f961181b45942ff1a7cfb11d79a9332
   const processStats = (data) => {
     const departmentCount = data.reduce((acc, curr) => {
       const dept = curr.department || 'Unknown';
@@ -240,7 +237,6 @@ const HRDashboard = () => {
   };
 
   return (
-<<<<<<< HEAD
     <div className="min-h-screen h-screen w-full bg-[#dda5a5] flex flex-col font-['Segoe_UI'] overflow-hidden">
       {/* Navigation Bar */}
       <Navbar onHomeClick={() => setSelectedCandidate(null)} />
@@ -248,12 +244,6 @@ const HRDashboard = () => {
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-=======
-    <div className="min-h-screen w-full bg-[#dda5a5] flex flex-col font-['Segoe_UI']">
-      <Navbar onHomeClick={() => setSelectedCandidate(null)} />
-
-      <div className="flex flex-1">
->>>>>>> 4419fce26f961181b45942ff1a7cfb11d79a9332
         {/* Sidebar */}
         <div className="w-1/4 h-full bg-white border-r border-[#264143] p-4 overflow-y-auto">
           <h3 className="text-lg font-semibold text-[#264143] mb-4">Candidates</h3>
