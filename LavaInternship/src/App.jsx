@@ -7,10 +7,11 @@ import StudentResumeForm from './components/StudentResumeForm';
 import { Amplify } from 'aws-amplify';
 import { Authenticator } from '@aws-amplify/ui-react';
 import { getCurrentUser } from 'aws-amplify/auth';
+import JobPostingForm from './components/JobPosting';
 import '@aws-amplify/ui-react/styles.css';
-
+import Navbar from './components/Navbar';
 import awsExports from './aws-exports';
-
+import JobListing from './components/JobListing';
 // Configure Amplify
 Amplify.configure(awsExports);
 
@@ -64,7 +65,7 @@ const HRLogin = () => {
             Header() {
               return (
                 <div className="text-center mb-4">
-                 
+
                 </div>
               );
             }
@@ -85,21 +86,40 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
+
         <Route path="/studentform" element={<StudentResumeForm />} />
-        
+
         {/* HR Authentication Route */}
         <Route path="/hr-login" element={<HRLogin />} />
-        
+        <Route path="/job-listings" element={<JobListing />} />
         {/* Protected HR Dashboard Route */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <HRDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
+        <Route
+          path="/navbar"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/post-job"
+          element={
+            <ProtectedRoute>
+              <JobPostingForm />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

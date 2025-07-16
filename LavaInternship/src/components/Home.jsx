@@ -9,8 +9,9 @@ const Home = () => {
   const handleGetStarted = () => {
     if (isStudent) {
       // Students go directly to resume form without authentication
-      navigate('/studentform');
-    } else {
+      navigate('/job-listings');
+    } 
+    else {
       // HR users go to Cognito login
       navigate('/hr-login');
     }
@@ -50,7 +51,7 @@ const Home = () => {
 
       {/* Card */}
       <div className="bg-white border-2 border-[#264143] rounded-2xl shadow-[3px_4px_0px_1px_#E99F4C] p-10 max-w-xl w-full text-center mt-40">
-        <h1 className="text-3xl font-extrabold text-[#264143] mb-2">Welcome to Resume Portal</h1>
+        <h1 className="text-3xl font-extrabold text-[#264143] mb-2">Welcome to AI Resume Screener</h1>
         <p className="text-lg text-[#DE5499] mb-6 font-semibold">
           Streamline your resume submission and review process!
         </p>
@@ -62,13 +63,12 @@ const Home = () => {
 
         <button
           onClick={handleGetStarted}
-          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${
-            isStudent 
-              ? 'bg-[#264143]' 
+          className={`btn font-bold w-60 py-3 rounded-lg shadow hover:opacity-90 transition text-white ${isStudent
+              ? 'bg-[#264143]'
               : 'bg-[#DE5499]'
-          }`}
+            }`}
         >
-          {isStudent ? 'Upload Resume' : 'HR Login'}
+          {isStudent ? 'See Job Listings' : 'HR Login'}
         </button>
 
         <div className="mt-10 text-xs text-gray-500">
