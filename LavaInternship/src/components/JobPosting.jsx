@@ -523,7 +523,7 @@ const JobPostingForm = () => {
                     <div className="flex justify-end space-x-4">
                         <button
                             type="button"
-                            onClick={() => navigate('/hr-dashboard')}
+                            onClick={() => navigate('/dashboard')}
                             className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             Cancel

@@ -21,11 +21,8 @@ const JobListing = () => {
         localStorage.setItem('applicationJobId', jobId);
         localStorage.setItem('applicationJobTitle', jobTitle);
 
-        // // Navigate to resume form
+        // Navigate to resume form
         navigate('/studentform');
-
-        // Alternative: If you want to pass via URL params
-        // navigate(`/studentform?jobId=${jobId}&jobTitle=${encodeURIComponent(jobTitle)}`);
     };
 
 
@@ -39,7 +36,7 @@ const JobListing = () => {
                 if (data.status === "success" && data.data) {
                     const groupedJobs = data.data;
 
-                    // Flatten grouped jobs
+                    // Flatten grouped jobs and map to a consistent structure
                     const allJobs = Object.values(groupedJobs).flat().map((job, index) => ({
                         ...job,
                         id: job.job_id, // provide fallback ID
@@ -52,12 +49,15 @@ const JobListing = () => {
                         minSalary: job.minSalary ?? "0",
                         maxSalary: job.maxSalary ?? "0",
                         currency: job.currency ?? "INR",
-                        postedDate: job.posting_date ?? new Date().toISOString(),
+                        postedDate: job.postedDate ?? new Date().toISOString(),
                         status: job.status ?? "Active"
                     }));
 
-                    setJobs(allJobs);
-                    setFilteredJobs(allJobs);
+                    // **UPDATE**: Filter to only include jobs with an "Active" status.
+                    const activeJobs = allJobs.filter(job => job.status === 'Active');
+
+                    setJobs(activeJobs);
+                    setFilteredJobs(activeJobs);
                 } else {
                     console.error("Invalid response format", data);
                 }
@@ -153,7 +153,7 @@ const JobListing = () => {
                     {/* Modal Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                         <div className="flex-1">
-                            <h2 className="text-2xl font-bold text-white-900 mb-2">{job.jobTitle}</h2>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">{job.jobTitle}</h2>
                             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                                 <div className="flex items-center gap-1">
                                     <Building className="w-4 h-4" />
@@ -184,7 +184,6 @@ const JobListing = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-green-600 font-semibold text-xl">
-                                        <DollarSign className="w-5 h-5" />
                                         {formatSalary(job.minSalary, job.maxSalary, job.currency)}
                                     </div>
                                     <div className="flex items-center gap-2 text-gray-700">
@@ -391,7 +390,7 @@ const JobListing = () => {
 
                 {/* Results Count */}
                 <div className="mb-6">
-                    <p className="text-black-600">
+                    <p className="font-bold text-white">
                         Showing {filteredJobs.length} of {jobs.length} jobs
                     </p>
                 </div>
