@@ -12,6 +12,9 @@ import '@aws-amplify/ui-react/styles.css';
 import Navbar from './components/Navbar';
 import awsExports from './aws-exports';
 import JobListing from './components/JobListing';
+import ManageJobs from './components/ManageJobs';
+import SendForReview from './components/SendForReview';
+import ReviewerPage from './components/ReviewerPage';
 // Configure Amplify
 Amplify.configure(awsExports);
 
@@ -80,19 +83,24 @@ const HRLogin = () => {
   );
 };
 
+// App.jsx (Corrected)
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+        {/* --- Public Routes --- */}
         <Route path="/" element={<Home />} />
-
         <Route path="/studentform" element={<StudentResumeForm />} />
-
-        {/* HR Authentication Route */}
-        <Route path="/hr-login" element={<HRLogin />} />
         <Route path="/job-listings" element={<JobListing />} />
-        {/* Protected HR Dashboard Route */}
+        
+        {/* The ReviewerPage MUST be public so external reviewers can access it */}
+        <Route path="/review" element={<ReviewerPage />} />
+
+        {/* --- HR Authentication Route --- */}
+        <Route path="/hr-login" element={<HRLogin />} />
+        
+        {/* --- Protected HR Routes --- */}
         <Route
           path="/dashboard"
           element={
@@ -101,7 +109,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/navbar"
           element={
@@ -110,7 +117,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/post-job"
           element={
@@ -119,6 +125,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/manage-jobs"
+          element={
+            <ProtectedRoute>
+              <ManageJobs />
+            </ProtectedRoute>
+          }
+        />
+        {/* The /send-review route is removed as it's not a page */}
 
         {/* Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

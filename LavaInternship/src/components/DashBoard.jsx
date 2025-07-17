@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import SendForReview from './SendForReview';
 import { signOut } from 'aws-amplify/auth';
 import axios from 'axios';
 import {
@@ -668,6 +668,8 @@ const HRDashboard = () => {
                 </button>
               </div>
 
+              {/* Send for review */}
+              <SendForReview candidate={selectedCandidate} />
             </div>
           )}
         </div>
