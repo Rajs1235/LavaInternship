@@ -6,17 +6,21 @@ from boto3.dynamodb.types import TypeDeserializer
 deserializer = TypeDeserializer()
 dynamodb = boto3.client('dynamodb')
 
-def lambda_handler(event, context):
-    resume_table = os.environ.get("DDB1_NAME")
-    job_table = os.environ.get("DDB2_NAME")
+def lambda_handler(event, context):  
+    resume_table = os.environ.get("DDB1_NAME")  # Resume metadata table
+    job_table = os.environ.get("DDB2_NAME")     # Job posting metadata table
 
-    # Fetch all resume items
+    # Fetch all resumes
     response = dynamodb.scan(TableName=resume_table)
     results = []
 
     for item in response.get('Items', []):
         resume_data = {k: deserializer.deserialize(v) for k, v in item.items()}
         entities = resume_data.get('entities', [])
+        resume_skills = resume_data.get("skills", [])
+
+        # Normalize resume skills (to lowercase for matching)
+        resume_skills_set = set([s.lower() for s in resume_skills if isinstance(s, str)])
 
         # Classify entities
         grouped = {
@@ -34,9 +38,10 @@ def lambda_handler(event, context):
                 if text not in grouped[typ]:
                     grouped[typ].append(text)
 
-        # Lookup department from jobpostingmetadata using jobId
+        # Job data fetch
         job_id = resume_data.get("jobId")
         department = None
+        job_skills = []
 
         if job_id:
             try:
@@ -54,9 +59,18 @@ def lambda_handler(event, context):
                 if job_item:
                     job_data = {k: deserializer.deserialize(v) for k, v in job_item.items()}
                     department = job_data.get('department')
+                    job_skills = job_data.get('skills', [])
             except Exception as e:
                 print(f"Failed to get job metadata for jobId {job_id}: {str(e)}")
 
+        # Normalize job skills
+        job_skills_set = set([s.lower() for s in job_skills if isinstance(s, str)])
+
+        # Skill match logic
+        matched_skills = list(resume_skills_set & job_skills_set)
+        match_percentage = (len(matched_skills) / len(job_skills_set)) * 100 if job_skills_set else 0
+
+        # Append result
         results.append({
             "resume_id": resume_data.get("resume_id"),
             "email": resume_data.get("email"),
@@ -68,18 +82,19 @@ def lambda_handler(event, context):
             "phone": resume_data.get("phone"),
             "grad_marks": resume_data.get("grad_marks"),
             "grad_year": resume_data.get("grad_year"),
-            "skills": resume_data.get("skills"),
+            "skills": list(resume_skills_set),
+            "matched_skills": matched_skills,
+            "match_percentage": round(match_percentage, 2),
             "linkedin": resume_data.get("linkedin"),
             "status": resume_data.get("status"),
             "work_pref": resume_data.get("work_pref"),
             "resume_url": resume_data.get("resume_url"),
             "address": resume_data.get("address"),
+            "datetime": resume_data.get("datetime"),
             "jobId": job_id,
             "department": department,
             "entities": grouped,
         })
-    print("jobId in resume_data:", resume_data.get("jobId"), "type:", type(resume_data.get("jobId")))
-
 
     return {
         "statusCode": 200,
