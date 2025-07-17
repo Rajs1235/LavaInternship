@@ -146,11 +146,17 @@ const StudentResumeForm = () => {
 
       case "Gender":
       case "workPref":
+      // START: ADDED VALIDATION CASE
+      case "experience":
+      // END: ADDED VALIDATION CASE
         if (!value) {
-          newErrors[name] = `Please select ${name === "Gender" ? "a gender" : "work preference"
-            }`;
+            let fieldName = "";
+            if (name === "Gender") fieldName = "a gender";
+            else if (name === "workPref") fieldName = "work preference";
+            else if (name === "experience") fieldName = "an experience range";
+            newErrors[name] = `Please select ${fieldName}`;
         } else {
-          delete newErrors[name];
+            delete newErrors[name];
         }
         break;
 
@@ -207,6 +213,9 @@ const StudentResumeForm = () => {
       gradMarks: e.target.gradMarks.value,
       gender: e.target.Gender.value,
       workPref: e.target.workPref.value,
+      // START: ADDED EXPERIENCE TO FORMDATA
+      experience: e.target.experience.value,
+      // END: ADDED EXPERIENCE TO FORMDATA
       linkedIn: e.target.linkedIn.value.trim(),
       address: e.target.address.value.trim(),
       resume: file?.name || "",
@@ -230,6 +239,9 @@ const StudentResumeForm = () => {
     collectError("gradYear", validateField("gradYear", formData.gradYear));
     collectError("gradMarks", validateField("gradMarks", formData.gradMarks));
     collectError("Gender", validateField("Gender", formData.gender));
+    // START: ADDED EXPERIENCE VALIDATION CALL
+    collectError("experience", validateField("experience", formData.experience));
+    // END: ADDED EXPERIENCE VALIDATION CALL
     collectError("workPref", validateField("workPref", formData.workPref));
     collectError("resume", validateField("resume", null, file));
 
@@ -270,7 +282,7 @@ const StudentResumeForm = () => {
       console.log("📁 Uploading file to S3:", result.upload_url);
       const uploadResponse = await fetch(result.upload_url, {
         method: "PUT",
-        headers: { "Content-Type": "application/pdf" },
+        headers: { "Content-Type": file.type }, // Use the actual file type
         body: file,
       });
 
@@ -403,14 +415,15 @@ const StudentResumeForm = () => {
                 Year of Passing 12th *
               </label>
               <input
-                type="date"
+                type="number"
                 name="pass12"
                 className={`w-full border-2 ${errors.pass12 ? "border-red-500" : "border-gray-300"
                   } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
-                min="1990-01-01"
-                max={`${new Date().getFullYear()}-12-31`}
-                onChange={handleBlur} // Use onChange for immediate feedback on date pickers
+                placeholder="YYYY"
+                min="1990"
+                max={new Date().getFullYear()}
+                onBlur={handleBlur}
               />
               {errors.pass12 && (
                 <p className="text-red-500 text-xs mt-1">{errors.pass12}</p>
@@ -444,14 +457,15 @@ const StudentResumeForm = () => {
                 Graduation Year *
               </label>
               <input
-                type="date"
+                type="number"
                 name="gradYear"
                 className={`w-full border-2 ${errors.gradYear ? "border-red-500" : "border-gray-300"
                   } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
-                min="1990-01-01"
-                max={`${new Date().getFullYear() + 6}-12-31`}
-                onChange={handleBlur} // Use onChange for immediate feedback
+                placeholder="YYYY"
+                min="1990"
+                max={new Date().getFullYear() + 6}
+                onBlur={handleBlur}
               />
               {errors.gradYear && (
                 <p className="text-red-500 text-xs mt-1">{errors.gradYear}</p>
@@ -480,6 +494,34 @@ const StudentResumeForm = () => {
               )}
             </div>
 
+            {/* START: NEW EXPERIENCE FIELD */}
+            <div className="md:col-span-2">
+                <label className="block font-semibold text-gray-700 mb-1">
+                    Experience Range *
+                </label>
+                <select
+                    name="experience"
+                    className={`w-full border-2 ${errors.experience ? "border-red-500" : "border-gray-300"
+                    } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                    required
+                    onBlur={handleBlur}
+                    defaultValue=""
+                >
+                    <option value="" disabled>Select Experience</option>
+                    <option value="0-1 Year">0-1 Year</option>
+                    <option value="1-2 Years">1-2 Years</option>
+                    <option value="2-3 Years">2-3 Years</option>
+                    <option value="3-5 Years">3-5 Years</option>
+                    <option value="5-7 Years">5-7 Years</option>
+                    <option value="7-10 Years">7-10 Years</option>
+                    <option value="10+ Years">10+ Years</option>
+                </select>
+                {errors.experience && (
+                    <p className="text-red-500 text-xs mt-1">{errors.experience}</p>
+                )}
+            </div>
+            {/* END: NEW EXPERIENCE FIELD */}
+            
             {/* Work Preference */}
             <div className="md:col-span-2">
               <label className="block font-semibold text-gray-700 mb-1">

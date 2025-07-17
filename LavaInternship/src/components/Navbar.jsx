@@ -10,13 +10,17 @@ const Navbar = ({ onHomeClick }) => {
         navigate('/dashboard');
     };
 
+    const handleCandidateDatabase = () => {
+        navigate('/candidate-database');
+    };
+
     const handlePostJob = () => {
         navigate('/post-job');
     };
 
     // New handler for Manage Jobs
     const handleManageJobs = () => {
-        navigate('/manage-jobs'); 
+        navigate('/manage-jobs');
     };
 
     const handleLogout = async () => {
@@ -38,6 +42,13 @@ const Navbar = ({ onHomeClick }) => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6" />
                             </svg>
                             Home
+                        </button>
+
+                        <button onClick={handleCandidateDatabase} className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-[#3a5a5c] transition-colors duration-200">
+                            <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            Candidate Database
                         </button>
 
                         {/* New Manage Jobs Button */}
