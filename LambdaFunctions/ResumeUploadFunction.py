@@ -1,7 +1,7 @@
 import json
 import boto3
 import os
-import datetime
+import datetime # Make sure datetime is imported
 import uuid
 import smtplib
 from email.message import EmailMessage
@@ -10,7 +10,7 @@ s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
 
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
-TABLE_NAME = os.environ.get("TABLE_NAME")
+TABLE_NAME = os.environ.get("DDB_TABLE")
 
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
@@ -64,11 +64,14 @@ def lambda_handler(event, context):
     work_pref = body["workPref"]
     address = body["address"]
     resume_filename = body["resume"]
+    
+    # FIX 1: Use .get() for safety and rename the variable to avoid shadowing
+    submission_timestamp = body.get("submittedAt") 
 
     first_name, *rest = name.strip().split()
     last_name = " ".join(rest) if rest else ""
 
-    # Generate S3 key
+    # FIX 2: Use the imported datetime module, not the variable
     s3_key = f"uploads/{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{resume_filename}"
     resume_id = str(uuid.uuid4())
 
@@ -95,7 +98,7 @@ def lambda_handler(event, context):
     # Store metadata
     table = dynamodb.Table(TABLE_NAME)
     try:
-        table.put_item(Item={
+        item_to_store = {
             "resume_id": resume_id,
             "filename": s3_key,
             "first_name": first_name,
@@ -112,10 +115,18 @@ def lambda_handler(event, context):
             "status": "Uploaded",
             "address": address,
             "resume_url": presigned_download_url,
-            "jobId": job_id,            # ✅ Add this
-            "jobTitle": job_title       # ✅ Add this
-        })
-    except Exception:
+            "jobId": job_id,            
+            "jobTitle": job_title,
+            # FIX 3: Store the renamed variable
+            "datetime": submission_timestamp 
+        }
+        # Remove keys with None values so they aren't stored in DynamoDB
+        item_to_store = {k: v for k, v in item_to_store.items() if v is not None}
+        
+        table.put_item(Item=item_to_store)
+        
+    except Exception as e:
+        print(f"Error storing metadata: {e}")
         return {"statusCode": 500, "body": json.dumps({"error": "Failed to store metadata"})}
 
     # Send confirmation email
