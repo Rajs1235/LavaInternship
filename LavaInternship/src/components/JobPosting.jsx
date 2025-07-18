@@ -192,7 +192,7 @@ const JobPostingForm = () => {
                             </select>
                             {errors.experienceLevel && <p className="text-red-500 text-xs mt-1">{errors.experienceLevel.message}</p>}
                         </div>
-                        
+
                         {/* Min Experience */}
                         <div>
                             <label className="block font-semibold text-gray-700 mb-1">Min Experience (years) *</label>
@@ -285,7 +285,7 @@ const JobPostingForm = () => {
                                 type="date"
                                 className={`w-full border-2 ${errors.applicationDeadline ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                             />
-                             {errors.applicationDeadline && <p className="text-red-500 text-xs mt-1">{errors.applicationDeadline.message}</p>}
+                            {errors.applicationDeadline && <p className="text-red-500 text-xs mt-1">{errors.applicationDeadline.message}</p>}
                         </div>
 
                         {/* Positions Available */}
@@ -303,7 +303,7 @@ const JobPostingForm = () => {
                             />
                             {errors.positionsAvailable && <p className="text-red-500 text-xs mt-1">{errors.positionsAvailable.message}</p>}
                         </div>
-                        
+
                         {/* Reporting To (Not Required) */}
                         <div>
                             <label className="block font-semibold text-gray-700 mb-1">Reporting To</label>
@@ -398,10 +398,41 @@ const JobPostingForm = () => {
                                 placeholder="List benefits (one per line)&#10;• Health insurance&#10;• Flexible working hours"
                             />
                         </div>
-                        
+
                         {/* Checkboxes are optional by nature */}
                         <div className="md:col-span-2 space-y-4">
-                           {/* ... a ... */}
+                            <div className="flex items-center">
+                                <input
+                                    {...register('isUrgent')}
+                                    type="checkbox"
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <label className="ml-2 block text-sm text-gray-700">
+                                    Mark as urgent hiring
+                                </label>
+                            </div>
+
+                            <div className="flex items-center">
+                                <input
+                                    {...register('travelRequired')}
+                                    type="checkbox"
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <label className="ml-2 block text-sm text-gray-700">
+                                    Travel required for this position
+                                </label>
+                            </div>
+
+                            <div className="flex items-center">
+                                <input
+                                    {...register('backgroundCheckRequired')}
+                                    type="checkbox"
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <label className="ml-2 block text-sm text-gray-700">
+                                    Background check required
+                                </label>
+                            </div>
                         </div>
                     </div>
 
