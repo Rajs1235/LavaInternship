@@ -2,7 +2,7 @@
 
 ## Overview
 
-Resume Portal is a web-based application designed to streamline the resume submission and review process for candidates and HR professionals. The system leverages AWS services to automate resume analysis, storage, and notifications, providing a seamless experience for both candidates and HR users.
+Resume Portal is a comprehensive web application designed to streamline the entire hiring pipeline, from job posting to final candidate review. The system leverages a powerful suite of AWS services to automate resume submission, analysis, storage, and collaborative decision-making, providing a seamless experience for candidates, HR professionals, and departmental reviewers.
 
 ## Team
 
@@ -14,25 +14,38 @@ Resume Portal is a web-based application designed to streamline the resume submi
 ## Features
 
 ### Candidate Features
-- **Resume Submission**: Candidates can upload their resumes in PDF format via a user-friendly form.
-- **Validation**: The form validates fields such as name, email, contact number, LinkedIn profile URL, and resume file size/type.
-- **Instant Feedback**: Candidates receive confirmation emails upon successful resume upload.
+- **Job Listings**: Candidates can view all active job openings with detailed descriptions and requirements.
+- **Resume Submission**: A user-friendly form allows candidates to apply for specific roles and upload their resumes (PDF/DOC/DOCX).
+- **Input Validation**: The form validates all fields, including email, phone number, and resume file size/type, to ensure data quality.
+- **Instant Feedback**: Candidates receive an email confirmation upon successful submission.
 
 ### HR Features
-- **Dashboard**: HR professionals can view, manage, and process candidate applications.
-- **Resume Analysis**: Resumes are analyzed using AWS Textract and Comprehend to extract metadata and insights.
-- **Notifications**: HR users receive email notifications when new resumes are uploaded.
+- **Secure HR Portal**: HR professionals log in through a secure portal managed by AWS Cognito.
+- **Centralized Dashboard**: A main dashboard provides a high-level overview of application statistics, with charts filtered for the last 30 days of activity.
+- **Job Posting**: A dedicated form for HR to create and publish new job listings with detailed requirements, responsibilities, and salary information.
+- **Job Management**: An interface to view all created jobs, see submission counts, and toggle their status between 'Active' and 'Inactive'. Inactive jobs are automatically hidden from the public candidate view.
+- **Comprehensive Candidate Database**: Access to a searchable and filterable database of the **entire talent pool**, including all-time data for both 'Rejected' and 'Advanced' candidates.
+- **Collaborative Departmental Review**:
+    - HR can send a candidate's profile to a department head (HOD) or other stakeholders for review.
+    - This is done via a secure, **authenticated link sent by email**, which has a **10-day time-to-live (TTL)**.
+    - The automated email supports adding **CC recipients** to keep other team members informed.
+    - The reviewer can approve or reject the candidate directly from the link, updating the status in real-time.
 
 ### AWS Integration
-- **AWS S3**: Stores uploaded resumes securely.
-- **AWS SNS**: Sends notifications to HR users.
-- **AWS Textract**: Extracts text and metadata from resumes.
-- **AWS Comprehend**: Analyzes extracted text for insights.
-- **AWS Cognito**: Provides HR Portal authentication and authorization for secure access.
-- **API Gateway**: Exposes HTTP APIs for frontend-backend communication.
-- **AWS Lambda**: Executes backend logic for resume uploading, extraction from DynamoDB for APIs, processing, and notifications.
+- **AWS S3**: Securely stores all uploaded resume files.
+- **AWS Cognito**: Provides robust authentication and authorization for the secure HR Portal.
+- **API Gateway**: Exposes a suite of HTTP APIs for all frontend-backend communication.
+- **AWS Lambda**: Executes all backend logic, including:
+  - Resume uploading and metadata generation.
+  - Data retrieval for all dashboard and listing pages.
+  - Job posting and status updates.
+  - **Secure token generation** and validation for the review workflow.
 - **AWS Amplify**: Manages frontend hosting, CI/CD, and integrates AWS services.
-- **AWS DynamoDB**: Stores candidate information, resume metadata, and analysis results for efficient querying and management.
+- **AWS DynamoDB**:
+    - A primary table stores all candidate information, resume metadata, and analysis results.
+    - A `JobPostingMetaData` table stores details for all created jobs.
+    - A `ReviewTokens` table securely stores tokens for the review workflow with a 10-day TTL.
+- **AWS Secrets Manager**: Securely stores sensitive credentials like the JWT signing secret.
 
 ## Architecture
 
@@ -48,21 +61,19 @@ The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the
     - **API Gateway**: Serves as the entry point for all frontend requests, routing them to appropriate Lambda functions.
     - **AWS Lambda Functions**:
       - **ResumeUpload Lambda**: Handles resume upload logic, validates and saves form details, and uploads the resume to S3.
-      - **ResumeProcess Lambda**: Processes resumes using AWS Textract and Comprehend, saves analyzed data to DynamoDB, and triggers notifications via SNS.
-      - Additional Lambdas may handle data extraction from DynamoDB for API responses and other backend processes.
+      - **JobPosting Lambda**: Creates and stores new job listings.
+      - **JobListing/CandidateData Lambdas**: Fetch and process data from DynamoDB for various API responses.
+      - **CreateReviewLink Lambda**: Generates a secure JWT, stores it in DynamoDB, and emails it to a reviewer (with CC) using `smtplib`.
+      - **ValidateReviewToken Lambda**: Verifies the JWT, checks its status in DynamoDB, and serves the candidate data for the review page.
 
 3. **AWS Services**:
     - **S3 Bucket**: Securely stores uploaded resumes.
-    - **DynamoDB**: Stores candidate information, resume metadata, and analysis results for efficient querying and management.
-    - **SNS Topic**: Sends notifications to HR users when new resumes are uploaded or processed.
-    - **Textract**: Extracts text and metadata from resumes.
-    - **Comprehend**: Analyzes extracted text for insights and relevant information.
+    - **DynamoDB**: Stores candidate information, job postings, and review tokens.
     - **Cognito**: Manages authentication and authorization for HR Portal access.
+    - **Secrets Manager**: Stores the JWT secret key.
 
 4. **Integration & Hosting**:
     - **AWS Amplify**: Provides frontend hosting, manages CI/CD pipelines, and integrates with backend AWS services for a unified development and deployment experience.
-
-This architecture ensures secure, scalable, and efficient handling of resume submissions, processing, and notifications for both candidates and HR professionals.
 
 ## AWS Backend Architecture
 
@@ -90,6 +101,10 @@ This architecture ensures secure, scalable, and efficient handling of resume sub
 ----- 
 ![resume form](/screenshots/resume-upload-form.png)
 ----- 
+![manage-jobs](/screenshots/manage-jobs.png)
+-----
+![candidate-database](/screenshots/candidate-database.png)
+-----
 
 ## Installation
 
@@ -101,7 +116,7 @@ This architecture ensures secure, scalable, and efficient handling of resume sub
 ### Steps
 1. Clone the repository:
    ```bash
-   git clone https://github.com/obiwan04kanobi/LavaInternship.git
+   git clone [https://github.com/obiwan04kanobi/LavaInternship.git](https://github.com/obiwan04kanobi/LavaInternship.git)
    cd LavaInternship
     ```
 
@@ -138,17 +153,19 @@ The project is deployed using AWS Amplify Hosting. To deploy:
 ## Usage
 ### Candidate Workflow
 
-1. Navigate to the homepage.
-2. Toggle the switch to "Candidate" mode.
+1. Navigate to the Job Listings page.
+2. Browse active jobs and click "Apply Now" on a desired role.
 3. Fill out the resume submission form and upload the resume.
 4. Receive a confirmation email upon successful submission.
 
 ### HR Workflow
-1. Navigate to the homepage.
-2. Toggle the switch to "HR" mode.
-3. Log in using AWS Cognito.
-4. Access the dashboard to view and manage 
-applications.
+1. Navigate to the homepage and select "HR".
+2. Log in using AWS Cognito.
+3. Access the dashboard to view analytics and new candidates.
+4. Use the "Post Job" form to create new openings.
+5. Use the "Manage Jobs" page to toggle the visibility of job listings.
+6. Use the "Candidate Database" to search the entire talent pool.
+7. When viewing a candidate, send a review link to a department head for collaborative feedback.
 
 ## Contributing
 Contributions are not being accepted for this project at this time.
@@ -161,4 +178,3 @@ For questions or support, please connect with any of us:
 - [Raj Srivastava](https://www.linkedin.com/in/raj-srivastava-a680482b4/) ([GitHub](https://github.com/Rajs1235))
 - [Mayank Pant](https://www.linkedin.com/in/mayank04pant/) ([GitHub](https://github.com/obiwan04kanobi))
 
-------------------

@@ -1,7 +1,7 @@
 import json
 import boto3
 import os
-import datetime # Make sure datetime is imported
+import datetime
 import uuid
 import smtplib
 from email.message import EmailMessage
@@ -35,8 +35,8 @@ def lambda_handler(event, context):
     except Exception:
         return {"statusCode": 400, "body": json.dumps({"error": "Invalid JSON in request body"})}
 
-    # Required fields
-    required_fields = ["name", "email", "contact", "pass12", "gradYear", "gradMarks", "gender", "workPref", "address", "resume"]
+    # --- UPDATED: Required fields list ---
+    required_fields = ["name", "email", "contact", "gender", "workPref", "address", "resume", "experience"]
     missing_fields = [field for field in required_fields if not body.get(field)]
 
     if missing_fields:
@@ -48,6 +48,9 @@ def lambda_handler(event, context):
     # Optional fields
     marks12 = body.get("marks12") or None
     linkedin = body.get("linkedIn") or None
+    pass12 = body.get("pass12") or None
+    grad_year = body.get("gradYear") or None
+    grad_marks = body.get("gradMarks") or None
 
     # Job Details
     job_id = body.get("jobId") or "Unknown"
@@ -57,32 +60,38 @@ def lambda_handler(event, context):
     name = body["name"]
     email = body["email"]
     phone = body["contact"]
-    pass12 = body["pass12"]
-    grad_year = body["gradYear"]
-    grad_marks = body["gradMarks"]
     gender = body["gender"]
     work_pref = body["workPref"]
     address = body["address"]
     resume_filename = body["resume"]
+    experience = body.get("experience") # New required field
     
-    # FIX 1: Use .get() for safety and rename the variable to avoid shadowing
     submission_timestamp = body.get("submittedAt") 
 
     first_name, *rest = name.strip().split()
     last_name = " ".join(rest) if rest else ""
 
-    # FIX 2: Use the imported datetime module, not the variable
     s3_key = f"uploads/{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{resume_filename}"
     resume_id = str(uuid.uuid4())
 
     # Generate presigned PUT URL
     try:
+        # Determine content type based on file extension
+        content_type = 'application/octet-stream' # Default
+        if resume_filename.lower().endswith('.pdf'):
+            content_type = 'application/pdf'
+        elif resume_filename.lower().endswith('.doc'):
+            content_type = 'application/msword'
+        elif resume_filename.lower().endswith('.docx'):
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
         presigned_upload_url = s3.generate_presigned_url(
             'put_object',
-            Params={"Bucket": BUCKET_NAME, "Key": s3_key},
+            Params={"Bucket": BUCKET_NAME, "Key": s3_key, "ContentType": content_type},
             ExpiresIn=300
         )
-    except Exception:
+    except Exception as e:
+        print(f"Error generating PUT URL: {e}")
         return {"statusCode": 500, "body": json.dumps({"error": "Failed to generate upload URL"})}
 
     # Generate presigned GET URL
@@ -92,7 +101,8 @@ def lambda_handler(event, context):
             Params={"Bucket": BUCKET_NAME, "Key": s3_key},
             ExpiresIn=7 * 24 * 3600
         )
-    except Exception:
+    except Exception as e:
+        print(f"Error generating GET URL: {e}")
         return {"statusCode": 500, "body": json.dumps({"error": "Failed to generate download URL"})}
 
     # Store metadata
@@ -105,23 +115,23 @@ def lambda_handler(event, context):
             "last_name": last_name,
             "email": email,
             "phone": phone,
+            "gender": gender,
+            "work_pref": work_pref,
+            "address": address,
+            "experience": experience, # --- ADDED ---
             "pass12": pass12,
             "grad_year": grad_year,
             "marks12": marks12,
             "grad_marks": grad_marks,
-            "gender": gender,
-            "work_pref": work_pref,
             "linkedin": linkedin,
             "status": "Uploaded",
-            "address": address,
             "resume_url": presigned_download_url,
             "jobId": job_id,            
             "jobTitle": job_title,
-            # FIX 3: Store the renamed variable
             "datetime": submission_timestamp 
         }
-        # Remove keys with None values so they aren't stored in DynamoDB
-        item_to_store = {k: v for k, v in item_to_store.items() if v is not None}
+        # Remove keys with None or empty string values so they aren't stored in DynamoDB
+        item_to_store = {k: v for k, v in item_to_store.items() if v is not None and v != ''}
         
         table.put_item(Item=item_to_store)
         

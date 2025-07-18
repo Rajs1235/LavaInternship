@@ -2,13 +2,22 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from './Navbar';
 
-// Helper function to parse date strings
+// Helper function to parse date strings like '17/07/2025, 21:49:58'
 const parseCandidateDate = (dateStr) => {
-    if (!dateStr) return null;
-    const [datePart] = dateStr.split(',');
-    if (!datePart) return null;
+    if (!dateStr) return new Date(0); // Return a very old date for sorting purposes if null
+    const [datePart, timePart] = dateStr.split(',');
+    if (!datePart) return new Date(0);
     const [day, month, year] = datePart.split('/');
+    // Note: JavaScript's Date constructor is month-indexed (0-11)
     return new Date(year, month - 1, day);
+};
+
+// Helper function to format gender
+const formatGender = (genderCode) => {
+    if (genderCode === 'M') return 'Male';
+    if (genderCode === 'F') return 'Female';
+    if (genderCode === 'O') return 'Other';
+    return 'N/A';
 };
 
 const CandidateDatabase = () => {
@@ -32,8 +41,17 @@ const CandidateDatabase = () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('https://k2kqvumlg6.execute-api.ap-south-1.amazonaws.com/getResume');
-                setAllCandidates(data);
-                setFilteredCandidates(data);
+                
+                // --- SORTING LOGIC ADDED HERE ---
+                // Sort the data by the 'datetime' field in descending order (newest first)
+                const sortedData = data.sort((a, b) => {
+                    const dateA = parseCandidateDate(a.datetime);
+                    const dateB = parseCandidateDate(b.datetime);
+                    return dateB - dateA; // Sort descending
+                });
+
+                setAllCandidates(sortedData);
+                setFilteredCandidates(sortedData);
 
                 const jobTypes = [...new Set(data.map(c => c.department).filter(Boolean))];
                 const experiences = [...new Set(data.map(c => c.experience).filter(Boolean))];
@@ -173,10 +191,11 @@ const CandidateDatabase = () => {
                                     <thead className="bg-gray-100">
                                         <tr>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Name</th>
-                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Contact</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Phone</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Job Type</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Experience</th>
-                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Grad. Marks</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Gender</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Submitted At</th>
                                         </tr>
@@ -185,13 +204,11 @@ const CandidateDatabase = () => {
                                         {filteredCandidates.map(candidate => (
                                             <tr key={candidate.resume_id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900">{candidate.first_name} {candidate.last_name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                                                    <div>{candidate.email}</div>
-                                                    <div className="text-sm text-gray-500">{candidate.phone}</div>
-                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.email || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.phone || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.department || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.experience || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.grad_marks ? `${candidate.grad_marks}%` : 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{formatGender(candidate.gender)}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.status || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                                                     {candidate.datetime && parseCandidateDate(candidate.datetime) ? parseCandidateDate(candidate.datetime).toLocaleDateString() : 'N/A'}

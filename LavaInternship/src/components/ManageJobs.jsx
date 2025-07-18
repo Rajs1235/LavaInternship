@@ -41,8 +41,12 @@ const ManageJobs = () => {
         submissionCount: submissionCounts[job.job_id] || 0,
       }));
 
-      setJobs(jobsWithCounts);
-      setFilteredJobs(jobsWithCounts);
+      // --- SORTING LOGIC ADDED HERE ---
+      // Sort jobs by 'postedDate' in descending order (newest first)
+      const sortedJobs = jobsWithCounts.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+
+      setJobs(sortedJobs);
+      setFilteredJobs(sortedJobs);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to fetch job data. Please try again later.");
