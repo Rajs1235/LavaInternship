@@ -1,7 +1,7 @@
 import json
 import boto3
 import os
-import jwt  # From the PyJWT library
+import jwt
 import time
 from datetime import datetime, timedelta, timezone
 import smtplib
@@ -25,8 +25,7 @@ secrets_manager_client = boto3.client('secretsmanager')
 
 def get_jwt_secret():
     """
-    Fetches the JWT secret from AWS Secrets Manager and caches it globally
-    to improve performance on subsequent invocations.
+    Fetches the JWT secret from AWS Secrets Manager and caches it globally.
     """
     if 'jwt_secret' not in globals():
         print("Fetching JWT secret from Secrets Manager...")
@@ -45,6 +44,7 @@ def lambda_handler(event, context):
         body = json.loads(event['body'])
         resume_id = body.get('resume_id')
         reviewer_email = body.get('reviewer_email')
+        cc_emails = body.get('cc_emails', [])  # Expect a list of CC emails
         candidate_name = body.get('candidate_name')
         department = body.get('department')
 
@@ -53,9 +53,6 @@ def lambda_handler(event, context):
 
         # 1. Generate a secure, time-limited JWT
         jwt_secret = get_jwt_secret()
-        
-        # --- CHANGE THIS LINE ---
-        # The token will now be valid for 10 days instead of 7.
         expiration_time = datetime.now(timezone.utc) + timedelta(days=10)
         
         payload = {
@@ -66,8 +63,7 @@ def lambda_handler(event, context):
         
         token = jwt.encode(payload, jwt_secret, algorithm='HS256')
 
-        # 2. Store the token for one-time use validation and set TTL
-        # The TTL will also be set for 10 days because it uses the same expiration_time variable.
+        # 2. Store the token for one-time use validation
         ttl_timestamp = int(expiration_time.timestamp())
         dynamodb_client.put_item(
             TableName=TOKEN_TABLE_NAME,
@@ -83,12 +79,14 @@ def lambda_handler(event, context):
         review_link = f"{FRONTEND_REVIEW_URL}?token={token}"
 
         # 4. Send the email using smtplib
-        print(f"Preparing to send email to {reviewer_email} using smtplib...")
+        print(f"Preparing to send email to {reviewer_email} and CC {cc_emails}...")
         
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"Review Requested for Candidate: {candidate_name}"
         msg['From'] = SENDER_EMAIL
         msg['To'] = reviewer_email
+        if cc_emails:
+            msg['Cc'] = ", ".join(cc_emails) # Add CC header if emails are present
 
         html_body = f"""
         <html>
@@ -109,17 +107,20 @@ def lambda_handler(event, context):
         
         msg.attach(MIMEText(html_body, 'html'))
         
+        # Combine all recipients for the sendmail function
+        all_recipients = [reviewer_email] + cc_emails
+        
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SENDER_EMAIL, [reviewer_email], msg.as_string())
+            server.sendmail(SENDER_EMAIL, all_recipients, msg.as_string())
         
-        print(f"Email successfully sent to {reviewer_email}.")
+        print(f"Email successfully sent to {all_recipients}.")
 
         return {
             'statusCode': 200,
             'headers': headers,
-            'body': json.dumps({'message': f'Review link sent successfully to {reviewer_email}.'})
+            'body': json.dumps({'message': f'Review link sent successfully to {", ".join(all_recipients)}.'})
         }
 
     except Exception as e:
