@@ -8,13 +8,8 @@ const StudentResumeForm = () => {
   const [jobInfo, setJobInfo] = useState({ jobId: null, jobTitle: null });
 
   useEffect(() => {
-    // // Method 1: From localStorage (if using the first approach)
     const jobId = localStorage.getItem('applicationJobId');
     const jobTitle = localStorage.getItem('applicationJobTitle');
-
-    // Method 2: From URL params (if using the second approach)
-    // const jobId = searchParams.get('jobId');
-    // const jobTitle = searchParams.get('jobTitle');
 
     if (jobId) {
       setJobInfo({ jobId, jobTitle });
@@ -34,33 +29,14 @@ const StudentResumeForm = () => {
   };
 
   const validatePhone = (phone) => {
-    // Only check for standard 10-digit Indian mobile numbers
     const cleaned = phone.trim().replace(/[\s\-()]/g, '');
     const phoneRegex = /^[6-9]\d{9}$/;
     return phoneRegex.test(cleaned);
   };
 
-  const validateMarks = (marks) => {
-    const num = parseFloat(marks);
-    return !isNaN(num) && num >= 0 && num <= 100;
-  };
-
-  const validateYear = (year, type) => {
-    const currentYear = new Date().getFullYear();
-    const num = parseInt(year);
-
-    if (type === "12th") {
-      return num >= 1990 && num <= currentYear;
-    } else if (type === "graduation") {
-      return num >= 1990 && num <= currentYear + 6;
-    }
-    return false;
-  };
-
-  const validateLinkedIn = (url) => {
-    const linkedInRegex =
-      /^https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/;
-    return linkedInRegex.test(url);
+  const validateExperience = (exp) => {
+      const num = parseFloat(exp);
+      return !isNaN(num) && num >= 0;
   };
 
   const validateFile = (file) => {
@@ -120,27 +96,12 @@ const StudentResumeForm = () => {
           delete newErrors[name];
         }
         break;
-
-      case "pass12":
-        if (!validateYear(value, "12th")) {
-          newErrors[name] =
-            "Please enter a valid 12th passing year (1990-current year)";
+      
+      case "professionalExperience":
+        if (!value.trim() || !validateExperience(value)) {
+            newErrors[name] = "Please enter a valid number of years (e.g., 0, 1.5, 5)";
         } else {
-          delete newErrors[name];
-        }
-        break;
-
-      case "gradYear":
-        if (!validateYear(value, "graduation")) {
-          newErrors[name] = "Please enter a valid graduation year";
-        } else if (
-          parseInt(value) <
-          parseInt(document.getElementsByName("pass12")[0].value)
-        ) {
-          newErrors[name] =
-            "Graduation year cannot be before 12th passing year";
-        } else {
-          delete newErrors[name];
+            delete newErrors[name];
         }
         break;
 
@@ -154,7 +115,6 @@ const StudentResumeForm = () => {
         }
         break;
 
-
       case "resume":
         const fileValidation = validateFile(file);
         if (!fileValidation.valid) {
@@ -165,6 +125,8 @@ const StudentResumeForm = () => {
         break;
 
       default:
+        // For optional fields, we don't set errors if they are empty
+        delete newErrors[name];
         break;
     }
 
@@ -201,6 +163,7 @@ const StudentResumeForm = () => {
       name: e.target.name.value.trim(),
       email: e.target.email.value.trim(),
       contact: e.target.contact.value.trim(),
+      professionalExperience: e.target.professionalExperience.value.trim(),
       pass12: e.target.pass12.value,
       gradYear: e.target.gradYear.value,
       marks12: e.target.marks12.value,
@@ -222,13 +185,11 @@ const StudentResumeForm = () => {
       if (!valid) localErrors[name] = true;
     };
 
-    // Perform all validations
+    // Perform all validations for required fields
     collectError("name", validateField("name", formData.name));
     collectError("email", validateField("email", formData.email));
     collectError("contact", validateField("contact", formData.contact));
-    collectError("pass12", validateField("pass12", formData.pass12));
-    collectError("gradYear", validateField("gradYear", formData.gradYear));
-    collectError("gradMarks", validateField("gradMarks", formData.gradMarks));
+    collectError("professionalExperience", validateField("professionalExperience", formData.professionalExperience));
     collectError("Gender", validateField("Gender", formData.gender));
     collectError("workPref", validateField("workPref", formData.workPref));
     collectError("resume", validateField("resume", null, file));
@@ -270,7 +231,7 @@ const StudentResumeForm = () => {
       console.log("📁 Uploading file to S3:", result.upload_url);
       const uploadResponse = await fetch(result.upload_url, {
         method: "PUT",
-        headers: { "Content-Type": "application/pdf" },
+        headers: { "Content-Type": file.type }, // Use the actual file type
         body: file,
       });
 
@@ -283,7 +244,6 @@ const StudentResumeForm = () => {
       setToastVisible(true);
       setTimeout(() => setToastVisible(false), 3000);
 
-      // Clear job info from localStorage
       localStorage.removeItem('applicationJobId');
       localStorage.removeItem('applicationJobTitle');
 
@@ -299,8 +259,8 @@ const StudentResumeForm = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div
-        className="bg-white shadow-xl rounded-none p-4 w-full mx-0 my-0"
-        style={{ maxHeight: '100vh', overflowY: 'auto' }}
+        className="bg-white shadow-xl rounded-lg p-8 w-full max-w-4xl"
+        style={{ maxHeight: '95vh', overflowY: 'auto' }}
       >
         <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
           🎓 Student Resume Submission
@@ -312,7 +272,6 @@ const StudentResumeForm = () => {
         </h2>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
-          {/* All form fields are now within a single grid container for better responsiveness */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             {/* Full Name */}
             <div>
@@ -322,15 +281,12 @@ const StudentResumeForm = () => {
               <input
                 type="text"
                 name="name"
-                className={`w-full border-2 ${errors.name ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.name ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="Enter your full name"
                 required
                 onBlur={handleBlur}
               />
-              {errors.name && (
-                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
 
             {/* Email */}
@@ -341,15 +297,12 @@ const StudentResumeForm = () => {
               <input
                 type="email"
                 name="email"
-                className={`w-full border-2 ${errors.email ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.email ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="example@email.com"
                 required
                 onBlur={handleBlur}
               />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
             {/* Contact Number */}
@@ -360,16 +313,12 @@ const StudentResumeForm = () => {
               <input
                 type="tel"
                 name="contact"
-                pattern="[6-9]\d{9}"
-                className={`w-full border-2 ${errors.contact ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.contact ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="10-digit mobile number"
                 required
                 onBlur={handleBlur}
               />
-              {errors.contact && (
-                <p className="text-red-500 text-xs mt-1">{errors.contact}</p>
-              )}
+              {errors.contact && <p className="text-red-500 text-xs mt-1">{errors.contact}</p>}
             </div>
 
             {/* Gender */}
@@ -379,45 +328,52 @@ const StudentResumeForm = () => {
               </label>
               <select
                 name="Gender"
-                className={`w-full border-2 ${errors.Gender ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.Gender ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
                 onBlur={handleBlur}
                 defaultValue=""
               >
-                <option value="" disabled>
-                  Select Gender
-                </option>
+                <option value="" disabled>Select Gender</option>
                 <option value="M">Male</option>
                 <option value="F">Female</option>
                 <option value="O">Other</option>
               </select>
-              {errors.Gender && (
-                <p className="text-red-500 text-xs mt-1">{errors.Gender}</p>
-              )}
+              {errors.Gender && <p className="text-red-500 text-xs mt-1">{errors.Gender}</p>}
             </div>
 
-            {/* 12th Passing Year */}
+            {/* Professional Experience */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">
-                Year of Passing 12th *
+                Professional Experience (years) *
+              </label>
+              <input
+                type="number"
+                name="professionalExperience"
+                min="0"
+                step="0.5"
+                className={`w-full border-2 ${errors.professionalExperience ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                placeholder="e.g., 2.5"
+                required
+                onBlur={handleBlur}
+              />
+              {errors.professionalExperience && <p className="text-red-500 text-xs mt-1">{errors.professionalExperience}</p>}
+            </div>
+            
+            {/* 12th Passing Year (Optional) */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">
+                Year of Passing 12th
               </label>
               <input
                 type="date"
                 name="pass12"
-                className={`w-full border-2 ${errors.pass12 ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
-                required
-                min="1990-01-01"
-                max={`${new Date().getFullYear()}-12-31`}
-                onChange={handleBlur} // Use onChange for immediate feedback on date pickers
+                className={`w-full border-2 ${errors.pass12 ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                onChange={handleBlur}
               />
-              {errors.pass12 && (
-                <p className="text-red-500 text-xs mt-1">{errors.pass12}</p>
-              )}
+              {errors.pass12 && <p className="text-red-500 text-xs mt-1">{errors.pass12}</p>}
             </div>
 
-            {/* 12th Marks */}
+            {/* 12th Marks (Optional) */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">
                 12th Marks (%)
@@ -425,87 +381,65 @@ const StudentResumeForm = () => {
               <input
                 type="number"
                 name="marks12"
-                min="0"
-                max="100"
-                step="0.01"
-                className={`w-full border-2 ${errors.marks12 ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                min="0" max="100" step="0.01"
+                className={`w-full border-2 ${errors.marks12 ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="e.g., 85.5"
                 onBlur={handleBlur}
               />
-              {errors.marks12 && (
-                <p className="text-red-500 text-xs mt-1">{errors.marks12}</p>
-              )}
+              {errors.marks12 && <p className="text-red-500 text-xs mt-1">{errors.marks12}</p>}
             </div>
 
-            {/* Graduation Year */}
+            {/* Graduation Year (Optional) */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">
-                Graduation Year *
+                Graduation Year
               </label>
               <input
                 type="date"
                 name="gradYear"
-                className={`w-full border-2 ${errors.gradYear ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
-                required
-                min="1990-01-01"
-                max={`${new Date().getFullYear() + 6}-12-31`}
-                onChange={handleBlur} // Use onChange for immediate feedback
+                className={`w-full border-2 ${errors.gradYear ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                onChange={handleBlur}
               />
-              {errors.gradYear && (
-                <p className="text-red-500 text-xs mt-1">{errors.gradYear}</p>
-              )}
+              {errors.gradYear && <p className="text-red-500 text-xs mt-1">{errors.gradYear}</p>}
             </div>
 
-            {/* Graduation Marks */}
+            {/* Graduation Marks (Optional) */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">
-                Graduation Marks (%) *
+                Graduation Marks (%)
               </label>
               <input
                 type="number"
                 name="gradMarks"
-                min="0"
-                max="100"
-                step="0.01"
-                className={`w-full border-2 ${errors.gradMarks ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                min="0" max="100" step="0.01"
+                className={`w-full border-2 ${errors.gradMarks ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="e.g., 75.0"
-                required
                 onBlur={handleBlur}
               />
-              {errors.gradMarks && (
-                <p className="text-red-500 text-xs mt-1">{errors.gradMarks}</p>
-              )}
+              {errors.gradMarks && <p className="text-red-500 text-xs mt-1">{errors.gradMarks}</p>}
             </div>
 
             {/* Work Preference */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block font-semibold text-gray-700 mb-1">
                 Work Preference *
               </label>
               <select
                 name="workPref"
-                className={`w-full border-2 ${errors.workPref ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.workPref ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 required
                 onBlur={handleBlur}
                 defaultValue=""
               >
-                <option value="" disabled>
-                  Select Preference
-                </option>
+                <option value="" disabled>Select Preference</option>
                 <option value="Work From Home">Work From Home</option>
                 <option value="Office">Office</option>
                 <option value="Hybrid">Hybrid</option>
               </select>
-              {errors.workPref && (
-                <p className="text-red-500 text-xs mt-1">{errors.workPref}</p>
-              )}
+              {errors.workPref && <p className="text-red-500 text-xs mt-1">{errors.workPref}</p>}
             </div>
 
-            {/* Address - Spans full width */}
+            {/* Address */}
             <div className="md:col-span-2">
               <label className="block font-semibold text-gray-700 mb-1">
                 Address *
@@ -513,18 +447,15 @@ const StudentResumeForm = () => {
               <input
                 type="text"
                 name="address"
-                className={`w-full border-2 ${errors.address ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.address ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="Enter your full address"
                 required
                 onBlur={handleBlur}
               />
-              {errors.address && (
-                <p className="text-red-500 text-xs mt-1">{errors.address}</p>
-              )}
+              {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
             </div>
 
-            {/* LinkedIn - Spans full width */}
+            {/* LinkedIn */}
             <div className="md:col-span-2">
               <label className="block font-semibold text-gray-700 mb-1">
                 LinkedIn Profile URL
@@ -532,17 +463,14 @@ const StudentResumeForm = () => {
               <input
                 type="url"
                 name="linkedIn"
-                className={`w-full border-2 ${errors.linkedIn ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
+                className={`w-full border-2 ${errors.linkedIn ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                 placeholder="https://linkedin.com/in/your-profile"
                 onBlur={handleBlur}
               />
-              {errors.linkedIn && (
-                <p className="text-red-500 text-xs mt-1">{errors.linkedIn}</p>
-              )}
+              {errors.linkedIn && <p className="text-red-500 text-xs mt-1">{errors.linkedIn}</p>}
             </div>
 
-            {/* Resume Upload - Spans full width */}
+            {/* Resume Upload */}
             <div className="md:col-span-2">
               <label className="block font-semibold text-gray-700 mb-1">
                 Upload Resume (PDF/DOC, Max 3MB) *
@@ -551,8 +479,7 @@ const StudentResumeForm = () => {
                 type="file"
                 name="resume"
                 accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className={`w-full border-2 ${errors.resume ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
+                className={`w-full border-2 ${errors.resume ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
                 required
                 onChange={handleFileChange}
               />
@@ -566,7 +493,6 @@ const StudentResumeForm = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-[1.02] shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300"
@@ -587,8 +513,6 @@ const StudentResumeForm = () => {
           </div>
         )}
 
-
-        {/* Success Toast */}
         {toastVisible && (
           <div className="fixed bottom-5 right-5 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg animate-slide-in z-50">
             <div className="flex items-center">
