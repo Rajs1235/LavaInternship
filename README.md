@@ -79,7 +79,7 @@ The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the
 
 ![aws backend architecture](/screenshots/ai-resume-screener.png)
 
-## React Frontend
+## React Frontend + API's Integration
 
 ![React Frontend](/screenshots/frontend-diagram.png)
 
