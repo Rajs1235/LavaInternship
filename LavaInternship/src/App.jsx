@@ -15,6 +15,10 @@ import JobListing from './components/JobListing';
 import ManageJobs from './components/ManageJobs';
 import SendForReview from './components/SendForReview';
 import ReviewerPage from './components/ReviewerPage';
+// START: IMPORT THE NEW COMPONENT
+import CandidateDatabase from './components/CandidateDatabase';
+// END: IMPORT THE NEW COMPONENT
+
 // Configure Amplify
 Amplify.configure(awsExports);
 
@@ -109,6 +113,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
+        {/* START: ADDED ROUTE FOR CANDIDATE DATABASE */}
+        <Route
+          path="/candidate-database"
+          element={
+            <ProtectedRoute>
+              <CandidateDatabase />
+            </ProtectedRoute>
+          }
+        />
+        {/* END: ADDED ROUTE FOR CANDIDATE DATABASE */}
+
         <Route
           path="/navbar"
           element={
