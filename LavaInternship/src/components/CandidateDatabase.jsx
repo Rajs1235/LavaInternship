@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Navbar from './Navbar'; // Import the Navbar component
+import Navbar from './Navbar';
 
-// Helper function to parse date strings like '17/07/2025, 21:49:58'
+// Helper function to parse date strings
 const parseCandidateDate = (dateStr) => {
     if (!dateStr) return null;
     const [datePart] = dateStr.split(',');
     if (!datePart) return null;
     const [day, month, year] = datePart.split('/');
-    // Note: JavaScript's Date constructor is month-indexed (0-11)
     return new Date(year, month - 1, day);
 };
 
@@ -41,7 +40,7 @@ const CandidateDatabase = () => {
                 setFilterOptions({ jobTypes, experiences });
             } catch (err) {
                 console.error("Error fetching candidates:", err);
-                setError("Failed to fetch candidate data. Please try again later.");
+                setError("Failed to fetch candidate data.");
             } finally {
                 setLoading(false);
             }
@@ -85,12 +84,9 @@ const CandidateDatabase = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-[#dda5a5] flex flex-col font-['Segoe_UI']">
-            {/* Navbar fixed at the top */}
-            <div className="sticky top-0 z-20 shadow-lg">
-                <Navbar />
-            </div>
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto mt-4">
+        <div className="h-screen w-full flex flex-col bg-[#dda5a5] font-['Segoe_UI']">
+            <Navbar />
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 <div className="max-w-7xl mx-auto">
                     <div className="bg-white p-6 sm:p-8 border-2 border-[#264143] rounded-2xl shadow-lg">
                         <header className="mb-8">
@@ -100,7 +96,7 @@ const CandidateDatabase = () => {
 
                         {/* Filters */}
                         <div className="bg-gray-50 rounded-lg shadow-md p-6 mb-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                                 <div className="lg:col-span-2">
                                     <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Search Candidates</label>
                                     <input
@@ -109,7 +105,7 @@ const CandidateDatabase = () => {
                                         placeholder="Search by name or email..."
                                         value={filters.search}
                                         onChange={(e) => handleFilterChange('search', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
                                 <div>
@@ -118,7 +114,7 @@ const CandidateDatabase = () => {
                                         id="gender"
                                         value={filters.gender}
                                         onChange={(e) => handleFilterChange('gender', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">All Genders</option>
                                         <option value="M">Male</option>
@@ -132,7 +128,7 @@ const CandidateDatabase = () => {
                                         id="jobType"
                                         value={filters.jobType}
                                         onChange={(e) => handleFilterChange('jobType', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">All Types</option>
                                         {filterOptions.jobTypes.map(type => (
@@ -146,7 +142,7 @@ const CandidateDatabase = () => {
                                         id="experience"
                                         value={filters.experience}
                                         onChange={(e) => handleFilterChange('experience', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">All Ranges</option>
                                         {filterOptions.experiences.sort().map(exp => (
@@ -154,14 +150,14 @@ const CandidateDatabase = () => {
                                         ))}
                                     </select>
                                 </div>
-                            </div>
-                            <div className="mt-6 flex justify-end">
-                                <button
-                                    onClick={resetFilters}
-                                    className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                                >
-                                    Reset Filters
-                                </button>
+                                <div className="lg:col-start-5">
+                                    <button
+                                        onClick={resetFilters}
+                                        className="w-full px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                                    >
+                                        Reset
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -188,19 +184,17 @@ const CandidateDatabase = () => {
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredCandidates.map(candidate => (
                                             <tr key={candidate.resume_id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900">
-                                                    {candidate.first_name} {candidate.last_name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">
+                                                <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900">{candidate.first_name} {candidate.last_name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                                                     <div>{candidate.email}</div>
                                                     <div className="text-sm text-gray-500">{candidate.phone}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">{candidate.department || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">{candidate.experience || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">{candidate.grad_marks ? `${candidate.grad_marks}%` : 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">{candidate.status || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">
-                                                    {candidate.datetime ? parseCandidateDate(candidate.datetime).toLocaleDateString() : 'N/A'}
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.department || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.experience || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.grad_marks ? `${candidate.grad_marks}%` : 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.status || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                                                    {candidate.datetime && parseCandidateDate(candidate.datetime) ? parseCandidateDate(candidate.datetime).toLocaleDateString() : 'N/A'}
                                                 </td>
                                             </tr>
                                         ))}
