@@ -92,6 +92,7 @@ def lambda_handler(event, context):
             "address": resume_data.get("address"),
             "datetime": resume_data.get("datetime"),
             "jobId": job_id,
+            "experience": resume_data.get("experience"),
             "department": department,
             "entities": grouped,
         })
