@@ -16,7 +16,7 @@ const JobPostingForm = () => {
         formState: { errors },
         reset,
         watch,
-        getValues // ADDED: To get form values for cross-field validation
+        getValues // To get form values for cross-field validation
     } = useForm({
         defaultValues: {
             jobTitle: '',
@@ -68,9 +68,24 @@ const JobPostingForm = () => {
                 status: 'Active'
             };
 
+            // 1. Post the job to your primary database
             await axios.post('https://7otecyotv1.execute-api.ap-south-1.amazonaws.com/PostJob', processedData);
 
-            console.log('Job posting data:', processedData);
+            console.log('Job posted successfully to the database.');
+
+            // 2. **NEW: Trigger the email notification Lambda**
+            try {
+                // **IMPORTANT: REPLACE** with your new email notification Lambda's API Gateway URL
+                const NOTIFICATION_LAMBDA_URL = "https://YOUR-NEW-API-GATEWAY-URL.execute-api.ap-south-1.amazonaws.com/default/sendJobNotification";
+                
+                await axios.post(NOTIFICATION_LAMBDA_URL, processedData);
+                console.log('Successfully triggered email notifications to candidates.');
+
+            } catch (emailError) {
+                // This catch block ensures that if the email notification fails,
+                // it won't prevent the rest of the success logic from running.
+                console.error('Could not send notification emails:', emailError);
+            }
 
             setSubmitSuccess(true);
             setTimeout(() => {
@@ -98,7 +113,7 @@ const JobPostingForm = () => {
             >
                 {submitSuccess && (
                     <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-                        Job posted successfully! Redirecting to dashboard...
+                        Job posted successfully! Notifying candidates and redirecting to dashboard...
                     </div>
                 )}
 
@@ -198,7 +213,7 @@ const JobPostingForm = () => {
                             <label className="block font-semibold text-gray-700 mb-1">Min Experience (years) *</label>
                             <input
                                 {...register('minExperience', {
-                                    required: 'Min experience is required', // CHANGED
+                                    required: 'Min experience is required',
                                     min: { value: 0, message: 'Experience cannot be negative' },
                                     pattern: { value: /^\d+$/, message: 'Please enter a valid number' }
                                 })}
@@ -214,10 +229,10 @@ const JobPostingForm = () => {
                             <label className="block font-semibold text-gray-700 mb-1">Max Experience (years) *</label>
                             <input
                                 {...register('maxExperience', {
-                                    required: 'Max experience is required', // CHANGED
+                                    required: 'Max experience is required',
                                     min: { value: 0, message: 'Experience cannot be negative' },
                                     pattern: { value: /^\d+$/, message: 'Please enter a valid number' },
-                                    validate: (value) => // ADDED VALIDATION
+                                    validate: (value) =>
                                         Number(value) >= Number(getValues('minExperience')) || 'Max must be greater than or equal to min experience'
                                 })}
                                 type="number"
@@ -231,7 +246,7 @@ const JobPostingForm = () => {
                         <div>
                             <label className="block font-semibold text-gray-700 mb-1">Currency *</label>
                             <select
-                                {...register('currency', { required: "Currency is required" })} // CHANGED
+                                {...register('currency', { required: "Currency is required" })}
                                 className={`w-full border-2 ${errors.currency ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                             >
                                 <option value="INR">INR (₹)</option>
@@ -247,7 +262,7 @@ const JobPostingForm = () => {
                             <label className="block font-semibold text-gray-700 mb-1">Min Salary (Annual) *</label>
                             <input
                                 {...register('minSalary', {
-                                    required: "Min salary is required", // CHANGED
+                                    required: "Min salary is required",
                                     pattern: { value: /^\d+$/, message: 'Please enter a valid number' }
                                 })}
                                 type="number"
@@ -262,9 +277,9 @@ const JobPostingForm = () => {
                             <label className="block font-semibold text-gray-700 mb-1">Max Salary (Annual) *</label>
                             <input
                                 {...register('maxSalary', {
-                                    required: "Max salary is required", // CHANGED
+                                    required: "Max salary is required",
                                     pattern: { value: /^\d+$/, message: 'Please enter a valid number' },
-                                    validate: (value) => // ADDED VALIDATION
+                                    validate: (value) =>
                                         Number(value) >= Number(getValues('minSalary')) || 'Max salary must be greater than or equal to min salary'
                                 })}
                                 type="number"
@@ -278,7 +293,7 @@ const JobPostingForm = () => {
                         <div>
                             <label className="block font-semibold text-gray-700 mb-1">Application Deadline *</label>
                             <input
-                                {...register('applicationDeadline', { // CHANGED
+                                {...register('applicationDeadline', {
                                     required: "Application deadline is required",
                                     validate: value => new Date(value) >= new Date(new Date().toDateString()) || 'Deadline cannot be in the past'
                                 })}
@@ -293,7 +308,7 @@ const JobPostingForm = () => {
                             <label className="block font-semibold text-gray-700 mb-1">Positions Available *</label>
                             <input
                                 {...register('positionsAvailable', {
-                                    required: 'Number of positions is required', // CHANGED
+                                    required: 'Number of positions is required',
                                     min: { value: 1, message: 'Must be at least 1' },
                                     pattern: { value: /^\d+$/, message: 'Please enter a valid number' }
                                 })}
@@ -308,7 +323,7 @@ const JobPostingForm = () => {
                         <div>
                             <label className="block font-semibold text-gray-700 mb-1">Reporting To</label>
                             <input
-                                {...register('reportingTo')} // REMOVED VALIDATION
+                                {...register('reportingTo')}
                                 className={`w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                                 placeholder="e.g., Engineering Manager"
                             />
@@ -318,7 +333,7 @@ const JobPostingForm = () => {
                         <div>
                             <label className="block font-semibold text-gray-700 mb-1">Contact Email</label>
                             <input
-                                {...register('contactEmail', { // REMOVED REQUIRED, KEPT PATTERN
+                                {...register('contactEmail', {
                                     pattern: { value: /^\S+@\S+\.\S+$/, message: 'Please enter a valid email' }
                                 })}
                                 type="email"
@@ -352,7 +367,7 @@ const JobPostingForm = () => {
                             {errors.responsibilities && <p className="text-red-500 text-xs mt-1">{errors.responsibilities.message}</p>}
                         </div>
 
-                        {/* Requirements (Not Required) */}
+                        {/* Requirements */}
                         <div className="md:col-span-2">
                             <label className="block font-semibold text-gray-700 mb-1">Requirements *</label>
                             <textarea
@@ -369,7 +384,7 @@ const JobPostingForm = () => {
                         <div className="md:col-span-2">
                             <label className="block font-semibold text-gray-700 mb-1">Qualifications</label>
                             <textarea
-                                {...register('qualifications')} // REMOVED VALIDATION
+                                {...register('qualifications')}
                                 rows="3"
                                 className={`w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                                 placeholder="List preferred qualifications (one per line)&#10;• Master's degree preferred&#10;• Industry certifications"
@@ -392,14 +407,14 @@ const JobPostingForm = () => {
                         <div className="md:col-span-2">
                             <label className="block font-semibold text-gray-700 mb-1">Benefits & Perks</label>
                             <textarea
-                                {...register('benefits')} // REMOVED VALIDATION
+                                {...register('benefits')}
                                 rows="4"
                                 className={`w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors`}
                                 placeholder="List benefits (one per line)&#10;• Health insurance&#10;• Flexible working hours"
                             />
                         </div>
 
-                        {/* Checkboxes are optional by nature */}
+                        {/* Checkboxes */}
                         <div className="md:col-span-2 space-y-4">
                             <div className="flex items-center">
                                 <input
