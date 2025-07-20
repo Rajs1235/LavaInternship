@@ -14,8 +14,8 @@ const ManageJobs = () => {
   const [error, setError] = useState(null);
   const [updatingJobId, setUpdatingJobId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [jobToDelete, setJobToDelete] = useState(null); // State for delete confirmation
 
-  // This function fetches the initial data when the component mounts.
   const fetchJobsAndSubmissions = async () => {
     setLoading(true);
     setError(null);
@@ -27,24 +27,18 @@ const ManageJobs = () => {
 
       const resumes = resumesResponse.data;
       const submissionCounts = resumes.reduce((acc, resume) => {
-        if (resume.jobId) {
-          acc[resume.jobId] = (acc[resume.jobId] || 0) + 1;
-        }
+        if (resume.jobId) acc[resume.jobId] = (acc[resume.jobId] || 0) + 1;
         return acc;
       }, {});
 
       const rawJobData = jobsResponse.data.data;
       const flattenedJobs = Object.values(rawJobData).flat();
-
       const jobsWithCounts = flattenedJobs.map(job => ({
         ...job,
         submissionCount: submissionCounts[job.job_id] || 0,
       }));
 
-      // --- SORTING LOGIC ADDED HERE ---
-      // Sort jobs by 'postedDate' in descending order (newest first)
       const sortedJobs = jobsWithCounts.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
-
       setJobs(sortedJobs);
       setFilteredJobs(sortedJobs);
     } catch (err) {
@@ -69,29 +63,45 @@ const ManageJobs = () => {
     setFilteredJobs(filtered);
   }, [searchTerm, jobs]);
 
-  // This function handles the logic for toggling a job's status.
   const toggleJobStatus = async (jobId, currentStatus) => {
     if (updatingJobId) return;
-
     setUpdatingJobId(jobId);
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     const originalJobs = [...jobs];
+    setJobs(jobs.map(job => job.job_id === jobId ? { ...job, status: newStatus } : job));
 
-    const updatedJobs = jobs.map(job =>
-      job.job_id === jobId ? { ...job, status: newStatus } : job
-    );
-    setJobs(updatedJobs);
+    try {
+      await axios.post(UPDATE_JOB_STATUS_API, { job_id: jobId, status: newStatus });
+    } catch (err) {
+      console.error("Failed to update job status:", err);
+      alert("Failed to update job status. Reverting change.");
+      setJobs(originalJobs);
+    } finally {
+      setUpdatingJobId(null);
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (updatingJobId) return;
+    setUpdatingJobId(jobId);
+    const originalJobs = [...jobs];
+    
+    // Optimistic UI update
+    setJobs(jobs.filter(job => job.job_id !== jobId));
 
     try {
       await axios.post(UPDATE_JOB_STATUS_API, {
         job_id: jobId,
-        status: newStatus,
+        action: 'delete' // Send the delete action to the Lambda
       });
-    } catch (err)  {    console.error("Failed to update job status:", err);
-      alert("Failed to update job status. Reverting change.");
-      setJobs(originalJobs);}
-     finally {
+      // On success, do nothing as the UI is already updated
+    } catch (err) {
+      console.error("Failed to delete job:", err);
+      alert("Failed to delete job. Reverting change.");
+      setJobs(originalJobs); // Revert on failure
+    } finally {
       setUpdatingJobId(null);
+      setJobToDelete(null); // Reset delete confirmation state
     }
   };
 
@@ -104,41 +114,36 @@ const ManageJobs = () => {
             <header className="mb-8">
               <h2 className="text-3xl font-bold text-[#264143]">Manage Job Listings</h2>
             </header>
-
             <div className="mb-6">
               <input
                 type="text"
                 placeholder="Search by Job ID, Title, or Department..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg"
               />
             </div>
-
             {loading && <p className="text-center text-lg text-gray-600 py-8">Loading job data...</p>}
             {error && <p className="text-center text-lg text-red-500 py-8">{error}</p>}
-
             {!loading && !error && (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Job ID</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Job Title</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Department</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Posted Date</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Submissions</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Action</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Job ID</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Job Title</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Department</th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase">Submissions</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Status</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredJobs.map((job) => (
-                      <tr key={job.job_id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={job.job_id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-800">{job.job_id}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900">{job.jobTitle}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">{job.department}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-base text-gray-600">{new Date(job.postedDate).toLocaleDateString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-base text-gray-800 font-semibold text-center">{job.submissionCount}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${job.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -146,21 +151,38 @@ const ManageJobs = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => toggleJobStatus(job.job_id, job.status)}
-                            disabled={updatingJobId === job.job_id}
-                            className={`px-4 py-2 rounded-lg text-white transition-colors w-32 text-center text-base font-semibold ${job.status === 'Active' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} ${updatingJobId === job.job_id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            {updatingJobId === job.job_id ? 'Updating...' : (job.status === 'Active' ? 'Deactivate' : 'Reactivate')}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleJobStatus(job.job_id, job.status)}
+                              disabled={updatingJobId === job.job_id}
+                              className={`px-4 py-2 rounded-lg text-white transition-colors w-32 text-center text-base font-semibold ${job.status === 'Active' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-600 hover:bg-green-700'} ${updatingJobId === job.job_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              {updatingJobId === job.job_id ? '...' : (job.status === 'Active' ? 'Deactivate' : 'Reactivate')}
+                            </button>
+                            {jobToDelete === job.job_id ? (
+                               <button
+                                onClick={() => handleDeleteJob(job.job_id)}
+                                disabled={updatingJobId === job.job_id}
+                                className={`px-4 py-2 rounded-lg text-white transition-colors w-32 text-center text-base font-semibold bg-red-700 hover:bg-red-800 ${updatingJobId === job.job_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {updatingJobId === job.job_id ? '...' : 'Confirm?'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setJobToDelete(job.job_id)}
+                                disabled={updatingJobId === job.job_id}
+                                className={`px-4 py-2 rounded-lg text-white transition-colors w-32 text-center text-base font-semibold bg-red-500 hover:bg-red-600 ${updatingJobId === job.job_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {filteredJobs.length === 0 && (
-                  <p className="text-center text-lg text-gray-500 mt-8 py-4">No jobs found.</p>
-                )}
+                {filteredJobs.length === 0 && <p className="text-center text-lg text-gray-500 mt-8 py-4">No jobs found.</p>}
               </div>
             )}
           </div>

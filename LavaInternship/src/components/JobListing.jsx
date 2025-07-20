@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Clock, DollarSign, Users, Calendar, Building, Briefcase, Star, X, User, FileText, Target, Award, CheckCircle } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, Building, Briefcase, Star, X, User, FileText, Target, Award, CheckCircle, ShieldCheck, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const JobListing = () => {
@@ -77,7 +77,8 @@ const JobListing = () => {
         let filtered = jobs.filter(job => {
             const matchesSearch = job.jobTitle.toLowerCase().includes(filters.search.toLowerCase()) ||
                 job.department?.toLowerCase().includes(filters.search.toLowerCase()) ||
-                job.location?.toLowerCase().includes(filters.search.toLowerCase());
+                job.location?.toLowerCase().includes(filters.search.toLowerCase()) ||
+                job.id?.toLowerCase().includes(filters.search.toLowerCase()); // <-- ADD THIS LINE
             const matchesDepartment = !filters.department || job.department === filters.department;
             const matchesWorkType = !filters.workType || job.workType === filters.workType;
             const matchesWorkMode = !filters.workMode || job.workMode === filters.workMode;
@@ -282,6 +283,29 @@ const JobListing = () => {
                                     <span className="font-medium text-gray-700">Currency: </span>
                                     <span className="text-gray-600">{job.currency}</span>
                                 </div>
+
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        Additional Details
+                                    </h3>
+                                    <div className="flex flex-wrap gap-3">
+                                        {job.isUrgent && (
+                                            <span className="flex items-center gap-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                <Star size={16} /> Urgent Hiring
+                                            </span>
+                                        )}
+                                        {job.travelRequired && (
+                                            <span className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                <Plane size={16} /> Travel Required
+                                            </span>
+                                        )}
+                                        {job.backgroundCheckRequired && (
+                                            <span className="flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                <ShieldCheck size={16} /> Background Check Required
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -323,7 +347,7 @@ const JobListing = () => {
                         <div className="lg:col-span-2">
                             <input
                                 type="text"
-                                placeholder="Search jobs, departments, locations..."
+                                placeholder="Search by ID, title, department..."
                                 value={filters.search}
                                 onChange={(e) => handleFilterChange('search', e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -409,8 +433,17 @@ const JobListing = () => {
                                                 <h3 className="text-xl font-bold text-gray-900">{job.jobTitle}</h3>
                                                 {job.isUrgent && (
                                                     <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                                                        <Star className="w-3 h-3" />
-                                                        Urgent
+                                                        <Star size={12} /> Urgent
+                                                    </span>
+                                                )}
+                                                {job.travelRequired && (
+                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                                                        <Plane size={12} /> Travel Required
+                                                    </span>
+                                                )}
+                                                {job.backgroundCheckRequired && (
+                                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                                                        <ShieldCheck size={12} /> Background Check
                                                     </span>
                                                 )}
                                             </div>

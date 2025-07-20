@@ -390,15 +390,6 @@ const HRDashboard = () => {
                         <span className="text-yellow-600 text-xs font-semibold">⏳ Under Review</span>
                       )}
                     </div>
-                    <button
-                      className="text-sm text-blue-600 hover:underline mt-1"
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleCandidateSelect(c)
-                      }}
-                    >
-                      View Profile
-                    </button>
                   </div>
                 </li>
               ))
