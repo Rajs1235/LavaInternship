@@ -7,7 +7,7 @@ import smtplib
 from email.message import EmailMessage
 
 s3 = boto3.client('s3')
-dynamodb = botooto3.resource('dynamodb')
+dynamodb = boto3.resource('dynamodb')
 
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
 TABLE_NAME = os.environ.get("DDB_TABLE")
@@ -100,7 +100,7 @@ def lambda_handler(event, context):
         presigned_download_url = s3.generate_presigned_url(
             'get_object',
             Params={"Bucket": BUCKET_NAME, "Key": s3_key},
-            ExpiresIn=7 * 24 * 3600 # 7 days
+            ExpiresIn=15 * 24 * 3600 
         )
     except Exception as e:
         print(f"Error generating GET URL: {e}")
