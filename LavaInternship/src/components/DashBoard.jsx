@@ -71,8 +71,8 @@ const HRDashboard = () => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const recentData = data.filter(candidate => {
-        const candidateDate = parseCandidateDate(candidate.datetime);
-        return candidateDate && candidateDate >= thirtyDaysAgo;
+      const candidateDate = parseCandidateDate(candidate.datetime);
+      return candidateDate && candidateDate >= thirtyDaysAgo;
     });
 
     const departmentCount = recentData.reduce((acc, curr) => {
@@ -389,6 +389,9 @@ const HRDashboard = () => {
                       {c.status === "Under Review" && (
                         <span className="text-yellow-600 text-xs font-semibold">⏳ Under Review</span>
                       )}
+                      {c.status === "Advanced for Interview" && (
+                        <span className="text-red-600 text-xs font-semibold">👨‍💻 Scheduled for Interview</span>
+                      )}
                     </div>
                   </div>
                 </li>
@@ -585,7 +588,7 @@ const HRDashboard = () => {
               <div className="mt-6 flex gap-4">
                 <button
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-                  onClick={() => updateStatus("Advanced")}
+                  onClick={() => updateStatus("Advanced for Interview")}
                 >
                   ✅ Advance
                 </button>
