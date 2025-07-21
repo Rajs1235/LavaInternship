@@ -40,17 +40,37 @@ def lambda_handler(event, context):
 
         resume_id = body.get('resume_id')
         new_status = body.get('status')
-        email = body.get('email')
-        first_name = body.get('first_name')
-
-        if not all([resume_id, new_status, email, first_name]):
+        
+        if not all([resume_id, new_status]):
             return {
                 'statusCode': 400,
                 'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps("Missing required fields")
+                'body': json.dumps("Missing required fields: resume_id and status are required.")
             }
 
-        # 1. Update the candidate's status in DynamoDB
+        # 1. Fetch the full candidate record to get all necessary details
+        response = table.get_item(Key={'resume_id': resume_id})
+        candidate = response.get('Item')
+
+        if not candidate:
+            return {
+                'statusCode': 404,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps(f"Candidate with resume_id {resume_id} not found.")
+            }
+        
+        email = candidate.get('email')
+        first_name = candidate.get('first_name')
+        experience = candidate.get('experience')
+
+        if not all([email, first_name]):
+             return {
+                'statusCode': 400,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps("Candidate record is missing email or first_name.")
+            }
+
+        # 2. Update the candidate's status in DynamoDB
         table.update_item(
             Key={'resume_id': resume_id},
             UpdateExpression='SET #s = :val',
@@ -59,7 +79,7 @@ def lambda_handler(event, context):
         )
         print(f"Successfully updated status for {resume_id} to {new_status}")
 
-        # 2. Determine which email to send based on the new status
+        # 3. Determine which email to send based on the new status and experience
         subject = ""
         plain_text_body = ""
         html_body = ""
@@ -75,18 +95,31 @@ def lambda_handler(event, context):
         """
 
         if new_status == "Advanced by HOD":
-            subject = "Next Step in Your Application: Aptitude Quiz"
-            plain_text_body = f"Hi {first_name},\n\nCongratulations! You have been advanced to the next stage. The next step is to complete a short aptitude quiz. Please use this link: {APTITUDE_QUIZ_LINK}\n\nWe wish you the best of luck!\n\nRegards,\nHR Team"
-            html_content = f"""
-                <h2 style="color: #264143;">Congratulations, {first_name}!</h2>
-                <p>Your profile has been reviewed and you have been advanced to the next stage of our hiring process.</p>
-                <p>The next step is to complete a short aptitude quiz. Please click the button below to access it:</p>
-                <p style="text-align: center; margin: 30px 0;">
-                    <a href="{APTITUDE_QUIZ_LINK}" style="background-color: #0078d4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Start Aptitude Quiz</a>
-                </p>
-                <p>Please complete the quiz at your earliest convenience. We wish you the best of luck!</p>
-            """
-            html_body = email_template_wrapper.format(content=html_content)
+            # --- NEW CONDITIONAL LOGIC ---
+            if experience == "0-1 Year":
+                subject = "Next Step in Your Application: Aptitude Quiz"
+                plain_text_body = f"Hi {first_name},\n\nCongratulations! You have been advanced to the next stage. The next step is to complete a short aptitude quiz. Please use this link: {APTITUDE_QUIZ_LINK}\n\nWe wish you the best of luck!\n\nRegards,\nHR Team"
+                html_content = f"""
+                    <h2 style="color: #264143;">Congratulations, {first_name}!</h2>
+                    <p>Your profile has been reviewed and you have been advanced to the next stage of our hiring process.</p>
+                    <p>The next step is to complete a short aptitude quiz. Please click the button below to access it:</p>
+                    <p style="text-align: center; margin: 30px 0;">
+                        <a href="{APTITUDE_QUIZ_LINK}" style="background-color: #0078d4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Start Aptitude Quiz</a>
+                    </p>
+                    <p>Please complete the quiz at your earliest convenience. We wish you the best of luck!</p>
+                """
+                html_body = email_template_wrapper.format(content=html_content)
+            else: # For experienced candidates
+                subject = "An Update on Your Application"
+                plain_text_body = f"Hi {first_name},\n\nCongratulations! Your profile has been reviewed and advanced. Our recruitment team will be in touch with you shortly regarding the next steps in the process.\n\nBest regards,\nHR Team"
+                html_content = f"""
+                    <h2 style="color: #264143;">Congratulations, {first_name}!</h2>
+                    <p>We are pleased to inform you that after a successful review, your application has been advanced to the next stage.</p>
+                    <p><strong>What's Next?</strong></p>
+                    <p>Our recruitment team will be in contact with you soon to discuss the next steps in the hiring process.</p>
+                    <p>Thank you for your continued interest.</p>
+                """
+                html_body = email_template_wrapper.format(content=html_content)
 
         elif new_status == "Advanced for Interview":
             subject = "Update: You've Been Selected for an Interview!"
@@ -122,7 +155,7 @@ def lambda_handler(event, context):
             """
             html_body = email_template_wrapper.format(content=html_content)
         
-        # 3. Send the appropriate email
+        # 4. Send the appropriate email
         send_email(email, subject, plain_text_body, html_body)
 
         return {
