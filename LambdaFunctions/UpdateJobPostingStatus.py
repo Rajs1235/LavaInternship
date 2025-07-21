@@ -1,10 +1,18 @@
 import json
 import boto3
 import os
+import uuid
+from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
 TABLE_NAME = os.environ.get('TABLE_NAME')
 table = dynamodb.Table(TABLE_NAME)
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return int(o) if o % 1 == 0 else float(o)
+        return super(DecimalEncoder, self).default(o)
 
 def lambda_handler(event, context):
     headers = {
@@ -23,7 +31,6 @@ def lambda_handler(event, context):
 
         # --- ACTION: DELETE ---
         if action == 'delete':
-            print(f"Attempting to delete job_id: {job_id}")
             table.delete_item(Key={'job_id': job_id})
             return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': f"Job '{job_id}' deleted."})}
         
@@ -31,59 +38,82 @@ def lambda_handler(event, context):
         elif action == 'update_status':
             new_status = body.get('status')
             if not new_status:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'message': 'status is required for update.'})}
+                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'message': 'status is required.'})}
             
-            print(f"Attempting to update status for job_id: {job_id}")
             response = table.update_item(
                 Key={'job_id': job_id},
                 UpdateExpression='SET #st = :s',
                 ExpressionAttributeNames={'#st': 'status'},
                 ExpressionAttributeValues={':s': new_status},
-                ReturnValues='UPDATED_NEW'
+                ReturnValues='ALL_NEW'
             )
-            return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': f"Status updated for '{job_id}'.", 'updated': response.get('Attributes', {})})}
+            return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': 'Status updated.', 'updatedJob': response.get('Attributes', {})}, cls=DecimalEncoder)}
 
-        # --- ACTION: UPDATE JOB DETAILS (CORRECTED) ---
+        # --- ACTION: UPDATE JOB DETAILS ---
         elif action == 'update_job_details':
-            print(f"Attempting to update details for job_id: {job_id}")
-            
-            update_expression_parts = []
-            expression_values = {}
-            expression_names = {}
-            
-            # Expanded list of all fields that can be updated from the modal
-            editable_fields = [
-                'jobTitle', 'department', 'location', 'workType', 'workMode', 
-                'experienceLevel', 'minExperience', 'maxExperience', 'minSalary', 
-                'maxSalary', 'currency', 'jobDescription', 'responsibilities', 
-                'requirements', 'qualifications', 'skills', 'benefits', 
-                'applicationDeadline', 'positionsAvailable', 'reportingTo', 
-                'contactEmail', 'isUrgent', 'travelRequired', 'backgroundCheckRequired'
-            ]
+            # Get the original job to check if department changed
+            original_job_response = table.get_item(Key={'job_id': job_id})
+            original_job = original_job_response.get('Item')
 
-            for field in editable_fields:
-                if field in body:
-                    # Use placeholders for both names and values to avoid reserved word conflicts
-                    name_placeholder = f"#{field}"
-                    value_placeholder = f":{field}"
-                    
-                    update_expression_parts.append(f"{name_placeholder} = {value_placeholder}")
-                    expression_names[name_placeholder] = field
-                    expression_values[value_placeholder] = body[field]
+            if not original_job:
+                return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'message': 'Job not found.'})}
+
+            new_department = body.get('department')
             
-            if not expression_values:
-                 return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'message': 'No fields provided to update.'})}
+            # SCENARIO 1: Department has changed, so we need to create a new item and delete the old one.
+            if new_department and original_job.get('department') != new_department:
+                print(f"Department changed for {job_id}. Creating new job item.")
+                
+                # Create the new job item by merging old and new data
+                new_item = {**original_job, **body}
+                
+                # Generate a new job_id
+                unique_suffix = str(uuid.uuid4())[:8]
+                new_item['job_id'] = f"{new_department.upper().replace(' ', '')}-{unique_suffix}"
+                
+                # Save the new item
+                table.put_item(Item=new_item)
+                
+                # Delete the old item
+                table.delete_item(Key={'job_id': job_id})
+                
+                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': 'Job updated with new ID.', 'updatedJob': new_item}, cls=DecimalEncoder)}
 
-            update_expression = "SET " + ", ".join(update_expression_parts)
+            # SCENARIO 2: Department is the same, just update the existing item.
+            else:
+                print(f"Updating details for job_id: {job_id}")
+                update_expression_parts = []
+                expression_values = {}
+                expression_names = {}
+                
+                editable_fields = [
+                    'jobTitle', 'location', 'department', 'workType', 'workMode', 'experienceLevel', 
+                    'minExperience', 'maxExperience', 'minSalary', 'maxSalary', 'currency', 
+                    'jobDescription', 'responsibilities', 'requirements', 'qualifications', 
+                    'skills', 'benefits', 'applicationDeadline', 'positionsAvailable', 
+                    'reportingTo', 'contactEmail', 'isUrgent', 'travelRequired', 'backgroundCheckRequired'
+                ]
 
-            response = table.update_item(
-                Key={'job_id': job_id},
-                UpdateExpression=update_expression,
-                ExpressionAttributeNames=expression_names,
-                ExpressionAttributeValues=expression_values,
-                ReturnValues="UPDATED_NEW"
-            )
-            return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': f"Details updated for '{job_id}'.", 'updated': response.get('Attributes', {})})}
+                for field in editable_fields:
+                    if field in body:
+                        name_placeholder = f"#{field}"
+                        value_placeholder = f":{field}"
+                        update_expression_parts.append(f"{name_placeholder} = {value_placeholder}")
+                        expression_names[name_placeholder] = field
+                        expression_values[value_placeholder] = body[field]
+                
+                if not expression_values:
+                     return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'message': 'No fields to update.'})}
+
+                update_expression = "SET " + ", ".join(update_expression_parts)
+                response = table.update_item(
+                    Key={'job_id': job_id},
+                    UpdateExpression=update_expression,
+                    ExpressionAttributeNames=expression_names,
+                    ExpressionAttributeValues=expression_values,
+                    ReturnValues="ALL_NEW"
+                )
+                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': 'Details updated.', 'updatedJob': response.get('Attributes', {})}, cls=DecimalEncoder)}
 
         else:
             return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'message': f"Invalid action: {action}"})}
