@@ -6,9 +6,9 @@ from boto3.dynamodb.types import TypeDeserializer
 deserializer = TypeDeserializer()
 dynamodb = boto3.client('dynamodb')
 
-def lambda_handler(event, context):  
+def lambda_handler(event, context):
     resume_table = os.environ.get("DDB1_NAME")  # Resume metadata table
-    job_table = os.environ.get("DDB2_NAME")     # Job posting metadata table
+    job_table = os.environ.get("DDB2_NAME")      # Job posting metadata table
 
     # Fetch all resumes
     response = dynamodb.scan(TableName=resume_table)
@@ -77,6 +77,7 @@ def lambda_handler(event, context):
             "first_name": resume_data.get("first_name"),
             "last_name": resume_data.get("last_name"),
             "gender": resume_data.get("gender"),
+            "age": resume_data.get("age"), # --- ADDED: Include age in the response ---
             "marks12": resume_data.get("marks12"),
             "pass12": resume_data.get("pass12"),
             "phone": resume_data.get("phone"),

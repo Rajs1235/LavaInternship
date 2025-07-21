@@ -42,7 +42,6 @@ const CandidateDatabase = () => {
             try {
                 const { data } = await axios.get('https://k2kqvumlg6.execute-api.ap-south-1.amazonaws.com/getResume');
                 
-                // --- SORTING LOGIC ADDED HERE ---
                 // Sort the data by the 'datetime' field in descending order (newest first)
                 const sortedData = data.sort((a, b) => {
                     const dateA = parseCandidateDate(a.datetime);
@@ -196,6 +195,7 @@ const CandidateDatabase = () => {
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Job Type</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Experience</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Gender</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Age</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Submitted At</th>
                                         </tr>
@@ -209,6 +209,7 @@ const CandidateDatabase = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.department || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.experience || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{formatGender(candidate.gender)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.age || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">{candidate.status || 'N/A'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                                                     {candidate.datetime && parseCandidateDate(candidate.datetime) ? parseCandidateDate(candidate.datetime).toLocaleDateString() : 'N/A'}
