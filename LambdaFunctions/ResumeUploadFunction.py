@@ -7,7 +7,7 @@ import smtplib
 from email.message import EmailMessage
 
 s3 = boto3.client('s3')
-dynamodb = boto3.resource('dynamodb')
+dynamodb = botooto3.resource('dynamodb')
 
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
 TABLE_NAME = os.environ.get("DDB_TABLE")
@@ -18,6 +18,7 @@ SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 
 def send_email(to_address, subject, body):
+    """Sends an email using configured SMTP settings."""
     msg = EmailMessage()
     msg["From"] = SMTP_EMAIL
     msg["To"] = to_address
@@ -35,8 +36,8 @@ def lambda_handler(event, context):
     except Exception:
         return {"statusCode": 400, "body": json.dumps({"error": "Invalid JSON in request body"})}
 
-    # --- UPDATED: Required fields list ---
-    required_fields = ["name", "email", "contact", "gender", "workPref", "address", "resume", "experience"]
+    # --- UPDATED: Added 'age' to the list of required fields ---
+    required_fields = ["name", "email", "contact", "gender", "workPref", "address", "resume", "experience", "age"]
     missing_fields = [field for field in required_fields if not body.get(field)]
 
     if missing_fields:
@@ -64,9 +65,10 @@ def lambda_handler(event, context):
     work_pref = body["workPref"]
     address = body["address"]
     resume_filename = body["resume"]
-    experience = body.get("experience") # New required field
+    experience = body["experience"]
+    age = body["age"] # --- ADDED: Extract age from the request body ---
     
-    submission_timestamp = body.get("submittedAt") 
+    submission_timestamp = body.get("submittedAt")
 
     first_name, *rest = name.strip().split()
     last_name = " ".join(rest) if rest else ""
@@ -76,7 +78,6 @@ def lambda_handler(event, context):
 
     # Generate presigned PUT URL
     try:
-        # Determine content type based on file extension
         content_type = 'application/octet-stream' # Default
         if resume_filename.lower().endswith('.pdf'):
             content_type = 'application/pdf'
@@ -99,13 +100,13 @@ def lambda_handler(event, context):
         presigned_download_url = s3.generate_presigned_url(
             'get_object',
             Params={"Bucket": BUCKET_NAME, "Key": s3_key},
-            ExpiresIn=7 * 24 * 3600
+            ExpiresIn=7 * 24 * 3600 # 7 days
         )
     except Exception as e:
         print(f"Error generating GET URL: {e}")
         return {"statusCode": 500, "body": json.dumps({"error": "Failed to generate download URL"})}
 
-    # Store metadata
+    # Store metadata in DynamoDB
     table = dynamodb.Table(TABLE_NAME)
     try:
         item_to_store = {
@@ -118,7 +119,8 @@ def lambda_handler(event, context):
             "gender": gender,
             "work_pref": work_pref,
             "address": address,
-            "experience": experience, # --- ADDED ---
+            "experience": experience,
+            "age": age, # --- ADDED: Include age in the item to be stored ---
             "pass12": pass12,
             "grad_year": grad_year,
             "marks12": marks12,
@@ -126,7 +128,7 @@ def lambda_handler(event, context):
             "linkedin": linkedin,
             "status": "Uploaded",
             "resume_url": presigned_download_url,
-            "jobId": job_id,            
+            "jobId": job_id,
             "jobTitle": job_title,
             "datetime": submission_timestamp 
         }
@@ -144,10 +146,10 @@ def lambda_handler(event, context):
         send_email(
             to_address=email,
             subject="Resume Upload Confirmation",
-            body=f"Hi {first_name},\n\nYour resume has been uploaded successfully.\n\nRegards,\nHR Team"
+            body=f"Hi {first_name},\n\nYour resume for the position of {job_title} has been received. We will get back to you shortly.\n\nRegards,\nThe Hiring Team"
         )
     except Exception as e:
-        print("Email error:", e)
+        print(f"Email sending failed: {e}") # Log email errors but don't fail the request
 
     return {
         "statusCode": 200,
