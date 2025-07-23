@@ -1,8 +1,8 @@
-# Resume Portal
+# AI Resume Portal
 
 ## Overview
 
-Resume Portal is a comprehensive web application designed to streamline the entire hiring pipeline, from job posting to final candidate review. The system leverages a powerful suite of AWS services to automate resume submission, analysis, storage, and collaborative decision-making, while also keeping past candidates engaged with new opportunities.
+AI Resume Portal is a comprehensive web application designed to streamline the entire hiring pipeline, from job posting to final candidate review. The system leverages a powerful suite of AWS services to automate resume submission, analysis, storage, and collaborative decision-making, while also keeping past candidates engaged with new opportunities.
 
 ## Team
 
@@ -15,7 +15,7 @@ Resume Portal is a comprehensive web application designed to streamline the enti
 
 ### Candidate Features
 - **Job Listings**: Candidates can view all active job openings with detailed descriptions and requirements.
-- **Resume Submission**: A user-friendly form allows candidates to apply for specific roles and upload their resumes (PDF/DOC/DOCX).
+- **Resume Submission**:  A user-friendly form allows candidates to apply for specific roles and upload their resumes (PDF/DOC/DOCX).
 - **Instant Feedback**: Candidates receive an email confirmation upon successful submission.
 - **Automated Job Recommendations**: Candidates who have applied in the last year receive a consolidated email at 9:30 AM daily with new job postings relevant to their previously applied departments.
 
@@ -30,49 +30,68 @@ Resume Portal is a comprehensive web application designed to streamline the enti
     - This is done via a secure, **authenticated link sent by email**, which has a **10-day time-to-live (TTL)**.
     - The reviewer can approve or reject the candidate directly from the link, updating the status in real-time.
 
-### AWS Integration
-- **AWS S3**: Securely stores all uploaded resume files.
-- **AWS Cognito**: Provides robust authentication and authorization for the secure HR Portal.
-- **Amazon EventBridge**: Triggers a daily Lambda function on a schedule (e.g., 9:30 AM) to send job recommendation emails.
-- **API Gateway**: Exposes a suite of HTTP APIs for all frontend-backend communication.
-- **AWS Lambda**: Executes all backend logic, including:
-  - Resume uploading and metadata generation.
-  - Data retrieval for all dashboard and listing pages.
-  - Job posting, status updates, and deletion.
-  - Secure token generation and validation for the review workflow.
-  - Daily aggregation and emailing of new job recommendations.
-- **AWS Amplify**: Manages frontend hosting, CI/CD, and integrates AWS services.
-- **AWS DynamoDB**:
-    - A primary table stores all candidate information and resume metadata.
-    - A `JobPostingMetaData` table stores details for all created jobs.
-    - A `ReviewTokens` table securely stores tokens for the review workflow with a 10-day TTL.
-- **AWS Secrets Manager**: Securely stores sensitive credentials like the JWT signing secret.
+## Security Practices
+The application is built with a strong emphasis on security, adhering to AWS best practices:
 
-## Architecture
+- **Identity and Access Management (IAM)**: Each Lambda function is assigned a unique IAM role with permissions configured according to the principle of least privilege. For example, the `ResumeUploadFunction` only has permissions to write to S3 and DynamoDB, but cannot read or delete other resources, minimizing the potential impact of any single component being compromised.
 
-The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the following components:
+- **Data Protection**:
+  - **Private S3 Bucket**: All candidate resumes are stored in a private S3 bucket, which is not publicly accessible.
+  - **Presigned URLs**: The application uses S3 presigned URLs to provide secure, time-limited access for both uploading and viewing resumes. This ensures that direct, unauthorized access to the files is prevented. The GET URLs for viewing resumes are valid for 15 days.
 
+- **Authentication and Authorization**: 
+  - **AWS Cognito**: The entire HR portal is protected by AWS Cognito, which manages user authentication, session handling, and authorization, ensuring only authenticated HR personnel can access sensitive candidate data and management features.
+
+- **Secure Credentials Management**:
+  - **AWS Secrets Manager**: Highly sensitive credentials, such as the secret key for signing JWTs in the review workflow, are securely stored and retrieved at runtime using AWS Secrets Manager, preventing them from being exposed in code or environment variables.
+
+- **Network Security**:
+  - **CORS**: Cross-Origin Resource Sharing (CORS) policies are configured on the S3 bucket and API Gateway to only allow requests from the authenticated frontend domain, preventing unauthorized web clients from interacting with the resources.
+
+## Cost Optimization
+The architecture is designed to be highly cost-effective by leveraging serverless technologies and best practices:
+
+- **Serverless-First Approach**: The entire backend runs on AWS Lambda, which means there are no idle servers to pay for. Code executes only when needed (e.g., when a form is submitted or an API is called), and costs are calculated based on the number of requests and execution duration in milliseconds.
+
+- **Right-Sized Lambda Functions**: Each Lambda function is configured with a specific memory allocation tailored to its workload. For instance, simple functions that update a database item use minimal memory (e.g., 128MB), while more intensive functions like the `ResumeProcessorFunction` are allocated more 
+
+- **On-Demand DynamoDB**: All DynamoDB tables are configured to use On-Demand capacity mode. This is a highly cost-effective strategy for applications with unpredictable traffic patterns, as it automatically scales throughput up or down and eliminates the need to pay for provisioned capacity that might go unused.
+
+- **Automated Data Lifecycle Management**:
+  - **DynamoDB TTL**: The `ReviewTokens` table uses a Time to Live (TTL) attribute. This automatically deletes expired token records from the table at no cost, preventing the table from growing indefinitely with stale data.
+
+## AWS Integration & Architecture
+The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the following components: 
 1. **Frontend**:
     - Built with React and TailwindCSS.
-    - Hosted and managed by AWS Amplify for CI/CD.
-    - Communicates with backend APIs via API Gateway for all user actions.
+    - Hosted and managed by AWS Amplify for CI/CD and seamless integration with AWS services.
+    - Provides interfaces for candidates (Job Listings, Application Form) and HR users (Dashboard, Job Management, etc.).
+    - Communicates with the backend exclusively through API Gateway.
 
 2. **Backend**:
-    - **API Gateway**: Serves as the entry point for all frontend requests, routing them to appropriate Lambda functions.
-    - **Amazon EventBridge**: A scheduled rule triggers the daily job recommendation Lambda at 9:30 AM.
-    - **AWS Lambda Functions**:
-      - **ResumeUpload Lambda**: Handles resume upload logic.
-      - **JobPosting Lambda**: Creates, updates, and deletes job listings.
-      - **Data Retrieval Lambdas**: Fetch and process data from DynamoDB for all frontend pages.
-      - **CreateReviewLink Lambda**: Generates a secure JWT and emails it to a reviewer.
-      - **ValidateReviewToken Lambda**: Verifies the JWT and serves the candidate data.
-      - **DailyJobRecommendation Lambda**: Scans for new jobs and recent candidates to send consolidated recommendation emails.
+- **API Gateway**: Serves as the secure entry point for all frontend requests, routing them to the appropriate Lambda functions.
+- **AWS Lambda Functions**: A suite of single-purpose functions that form the core of the application logic:
+  - **Data Ingestion & Processing**:
+    - `ResumeUploadFunction`: Receives candidate data, generates a presigned URL for S3, and creates an initial record in DynamoDB.
+    - `ResumeProcessorFunction`: Triggered by S3 uploads, this function uses AWS Textract and Comprehend to analyze resumes, extract skills and entities, and updates the candidate's record in DynamoDB.
+    - `JobPostingFunction`: Creates new job listings in the database.
+  - **Data Retrieval & Management**: 
+    - `JobListingFunction`: Fetches and groups all active job postings for the candidate view.
+    - `getResumeEntities`: Powers the HR dashboard and candidate database by fetching all candidate data and enriching it with job details and skill-match percentages.
+    - `UpdateJobPostingStatus`: Handles activating, deactivating, modifying, and deleting job posts.
+    - `UpdateApplicantStatus`: Updates a candidate's status (e.g., "Advanced", "Rejected") and sends automated, context-aware email notifications.
+  - **Collaborative Workflow & Notifications**:
+    - `SendForReviewFunction`: Generates a secure, time-limited JWT, stores it in a dedicated DynamoDB table, and emails a review link to stakeholders.
+    - `ValidateReviewTokenFunction`: Verifies the JWT from the review link, checks its validity in DynamoDB, and securely serves the candidate's data.
+    - `DailyJobRecommendationsFunction`: Triggered daily by EventBridge, this function scans for new jobs and recent candidates to send consolidated recommendation emails.
+- **Amazon EventBridge**: A scheduled rule (cron job) invokes the DailyJobRecommendationsFunction every morning at 9:30 AM to automate candidate engagement.
 
-3. **AWS Services**:
-    - **S3 Bucket**: Securely stores uploaded resumes.
-    - **DynamoDB**: Stores candidate information, job postings, and review tokens.
-    - **Cognito**: Manages authentication and authorization for the HR Portal.
-    - **Secrets Manager**: Stores the JWT secret key.
+3. **Core AWS Services**:
+  - **S3 Bucket**: Provides durable, secure, and private storage for all uploaded resume files.
+  - **DynamoDB**: Three core tables power the application: a table for candidate/resume metadata, another for job postings, and a third for the temporary review tokens (with TTL enabled for automatic cleanup).
+  - **Cognito**: Manages all aspects of authentication and authorization for the secure HR Portal.
+  - **Secrets Manager**: Securely stores the JWT secret key, decoupling it from the application code.
+
 
 ## AWS Backend Architecture
 
@@ -110,12 +129,12 @@ The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the
 ### Prerequisites
 - Node.js and npm installed.
 - AWS account with necessary permissions.
-- Amplify CLI installed.
+- Amplify CLI (`npm install -g @aws-amplify/cli`)
 
 ### Steps
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/obiwan04kanobi/LavaInternship.git](https://github.com/obiwan04kanobi/LavaInternship.git)
+   git clone https://github.com/obiwan04kanobi/LavaInternship.git
    cd LavaInternship
     ```
 
@@ -124,7 +143,7 @@ The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the
     npm install
     ```
 
-3. Configure AWS Amplify:
+3. Initialize and deploy with Amplify:
    ```bash
     amplify init
     amplify push
@@ -135,17 +154,8 @@ The system is deployed in the **ap-south-1 (Mumbai)** region and consists of the
     npm run dev
     ```
 
-## Deployment
-
-The project is deployed using AWS Amplify Hosting. To deploy:
-
-1. Run the build command:
-   ```bash
-    npm run build
+5. Publish to production:
     ```
-
-2. Push changes to Amplify Hosting:
-   ```bash
     amplify publish
     ```
 
@@ -153,8 +163,8 @@ The project is deployed using AWS Amplify Hosting. To deploy:
 ### Candidate Workflow
 
 1. Navigate to the Job Listings page.
-2. Browse active jobs and click "Apply Now" on a desired role.
-3. Fill out the resume submission form and upload the resume.
+2. Browse active jobs and click "Apply Now".
+3. Fill out the submission form and upload a resume.
 4. Receive a confirmation email and subsequent daily emails for new, relevant job postings.
 
 ### HR Workflow
