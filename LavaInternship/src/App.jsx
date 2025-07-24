@@ -13,6 +13,7 @@ import Navbar from './components/Navbar';
 import awsExports from './aws-exports';
 import JobListing from './components/JobListing';
 import ManageJobs from './components/ManageJobs';
+import SmartPost from './components/SmartPost'
 import SendForReview from './components/SendForReview';
 import ReviewerPage from './components/ReviewerPage';
 // START: IMPORT THE NEW COMPONENT
@@ -138,6 +139,14 @@ function App() {
           element={
             <ProtectedRoute>
               <JobPostingForm />
+            </ProtectedRoute>
+          }
+        />
+                <Route
+          path="/smart-post"
+          element={
+            <ProtectedRoute>
+              <SmartPost />
             </ProtectedRoute>
           }
         />
